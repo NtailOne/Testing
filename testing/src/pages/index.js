@@ -1,7 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
+import Context from '../components/Context';
 
-export default function Home({ serverURL }) {
+const Home = () => {
+  const { serverURL } = useContext(Context);
+  
   const [data, setData] = useState(null);
 
   useEffect(() => {
@@ -18,3 +21,5 @@ export default function Home({ serverURL }) {
     </div>
   );
 };
+
+export default Home;
