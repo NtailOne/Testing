@@ -1,0 +1,8 @@
+{
+    "serverPort": 8080,
+    "connectionLimit": 1000,
+    "host": "127.0.0.1",
+    "user": "root",
+    "database": "TestingDB",
+    "password": "!kingMERROR37"
+}

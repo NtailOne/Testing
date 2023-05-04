@@ -1,0 +1,22 @@
+# dependencies
+/server/node_modules
+/testing/node_modules
+/tesing/.pnp
+/testing/.pnp.js
+
+# testing
+/testing/coverage
+
+# production
+/testing/build
+
+# misc
+/testing/.DS_Store
+/testing/.env.local
+/testing/.env.development.local
+/testing/.env.test.local
+/testing/.env.production.local
+
+/testing/npm-debug.log*
+/testing/yarn-debug.log*
+/testing/yarn-error.log*
