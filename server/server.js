@@ -1,67 +1,74 @@
-const express = require("express");
-const config = require("config");
-const mysql = require("mysql2");
-const cors = require("cors");
+const express = require('express');
+const bodyParser = require('body-parser');
+const config = require('config');
+const mysql = require('mysql2/promise');
+const cors = require('cors');
 
 const app = express();
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 
-const PORT = config.get("serverPort");
+const PORT = config.get('serverPort');
 
-try {
-    // database connection
-    const pool = mysql.createPool({
-        connectionLimit: config.get("connectionLimit"),
-        host: config.get("host"),
-        user: config.get("user"),
-        database: config.get("database"),
-        password: config.get("password")
-    }).promise();
+(async () => {
 
-    // server port listening
-    app.listen(PORT, () => {
-        console.log('Server has started on port: ', PORT);
-    });
-
-    // client requests
-
-    app.get('/home', async (req, res) => {
-        res.send({ express: 'Server has received the home get request' });
-    });
-
-    app.post('/login', async (req, res) => {
-        const sql = "SELECT * FROM users WHERE `email` = ? AND `password` = ?";
-        const values = [
-            req.body.email,
-            req.body.password,
-        ];
-        await pool.query(sql, [req.body.email, req.body.password], (err, results) => {
-            if (err) return res.json("Error");
-            if (results.length > 0) return res.json("Success");
-            else return res.json("Failed");
+    try {
+        // Соединение с базой данных
+        const pool = await mysql.createPool({
+            connectionLimit: config.get('connectionLimit'),
+            host: config.get('host'),
+            user: config.get('user'),
+            database: config.get('database'),
+            password: config.get('password')
         });
-    });
 
-    // admin requests
-
-    app.post('/admin', (req, res) => {
-        const sql = "INSERT INTO users (`role_id`, `email`, `password`, `surname`, `name`, `patronymic`, `course`, `group`) VALUES ?";
-        const values = [
-            req.body.role_id,
-            req.body.email,
-            req.body.password,
-            req.body.surname,
-            req.body.name,
-            req.body.patronymic,
-            req.body.course,
-            req.body.group
-        ];
-        pool.query(sql, [values], (err, results) => {
-            if (err) return res.json("Error");
-            return res.json(results);
+        // Запросы от пользователей
+        app.get('/home', (req, res) => {
+            res.send({ express: 'Server has received the home get request' });
         });
-    });
-} catch (e) { }
 
+        app.post('/login', async (req, res) => {
+            const sql = 'SELECT * FROM users WHERE `email` = ? AND `password` = ?';
+            const values = [
+                req.body.email,
+                req.body.password,
+            ];
+            try {
+                const [rows] = await pool.execute(sql, values);
+                if (rows.length > 0) {
+                    res.status(200).send('Success');
+                } else {
+                    res.status(401).send('Failed');
+                }
+            } catch (err) {
+                console.log(err);
+                res.json('Error');
+            }
+        });
+
+        // Запросы от администратора
+        app.post('/admin-login', (req, res) => {
+            const { login, password } = req.body;
+            if (login == config.get('adminLogin') && password == config.get('adminPassword')) {
+                res.status(200).send('Success');
+            } else {
+                res.status(401).send('Invalid login or password');
+            }
+        });
+
+        // Обработка неопределенных URL-адресов
+        app.use((req, res) => {
+            res.status(404).send('Not found');
+        });
+
+        // Слушатель порта
+        app.listen(PORT, () => {
+            console.log('Сервер запущен на порту: ', PORT);
+        });
+    } catch (e) {
+        console.error(e);
+        process.exit(1); // Остановка приложения в случае ошибки подключения к базе данных
+    }
+
+})();

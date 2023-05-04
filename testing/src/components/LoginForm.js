@@ -3,7 +3,7 @@ import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import Context from '../components/Context';
+import { Context } from '../components/Context';
 
 const LoginForm = () => {
     const { serverURL } = useContext(Context);
@@ -41,7 +41,7 @@ const LoginForm = () => {
     const handleInput = (event) => {
         setValues(prev => ({
             ...prev,
-            [event.target.name]: [event.target.value]
+            [event.target.name]: event.target.value
         }));
     }
 

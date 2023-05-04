@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
-import Context from '../components/Context';
+import { Context } from '../components/Context';
 
 const Home = () => {
   const { serverURL } = useContext(Context);
-  
+
   const [data, setData] = useState(null);
 
   useEffect(() => {

@@ -8,7 +8,7 @@ const NavbarElement = () => {
     return (
         <Navbar className="mb-5" bg="light" expand="lg">
             <Container>
-                <Navbar.Brand href="/home">React-Bootstrap</Navbar.Brand>
+                <Navbar.Brand href="/home">Тестирование по информатике и ИКТ</Navbar.Brand>
                 <Navbar.Toggle aria-controls="basic-navbar-nav" />
                 <Navbar.Collapse id="basic-navbar-nav">
                     <Nav className="me-auto">
