@@ -40,7 +40,7 @@ const AdminLoginForm = () => {
     }
 
     return (
-        <div className='row justify-content-center'>
+        <div className='row justify-content-center mx-0 login admin'>
             <Form className='col-md-6 col-11' onSubmit={handleSubmit}>
                 <Form.Group className='mb-3' controlId='formBasicEmail'>
                     <Form.Label>Логин</Form.Label>
@@ -50,7 +50,7 @@ const AdminLoginForm = () => {
                     <Form.Label>Пароль</Form.Label>
                     <Form.Control type='password' name='password' onChange={handleInput} placeholder='Пароль' />
                 </Form.Group>
-                <Button className='col-12' variant='primary' type='submit'>Войти</Button>
+                <Button className='col-12 button' variant='primary' type='submit'>Войти</Button>
             </Form>
         </div>
     );

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { Context } from '../components/Context';
+import Navbar from '../components/Navbar';
 
 const Home = () => {
   const { serverURL } = useContext(Context);
@@ -14,11 +15,14 @@ const Home = () => {
   }, [serverURL]);
 
   return (
-    <div>
-      <h1>Welcome to GeeksforGeeks</h1>
-      <br />
-      <p>{data}</p>
-    </div>
+    <>
+      <Navbar />
+      <div>
+        <h1>Welcome to GeeksforGeeks</h1>
+        <br />
+        <p>{data}</p>
+      </div>
+    </>
   );
 };
 

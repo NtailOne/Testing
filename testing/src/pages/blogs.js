@@ -1,8 +1,12 @@
 import React from 'react';
- 
+import Navbar from '../components/Navbar';
+
 const Blogs = () => {
   return (
-    <h1>You can write your blogs!</h1>
+    <>
+      <Navbar />
+      <h1>You can write your blogs!</h1>
+    </>
   );
 };
 

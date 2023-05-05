@@ -1,0 +1,23 @@
+.login {
+    background-image: url('./images/main.png');
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center center;
+    height: 100vh;
+    color:white;
+    font-size: large;
+    font-weight: bold;
+}
+
+.login.admin {
+    background-image: url('./images/main-admin.png');
+}
+
+.login>form {
+    margin-top: 22vh;
+}
+
+.button {
+    font-size: large;
+    font-weight: bold;
+}

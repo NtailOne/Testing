@@ -1,13 +1,17 @@
 import React from "react";
- 
- const About = () => {
+import Navbar from '../components/Navbar';
+
+const About = () => {
   return (
-    <div>
-      <h1>
-        GeeksforGeeks is a Computer 
-        Science portal for geeks.
-      </h1>
-    </div>
+    <>
+      <Navbar />
+      <div>
+        <h1>
+          GeeksforGeeks is a Computer
+          Science portal for geeks.
+        </h1>
+      </div>
+    </>
   );
 };
 

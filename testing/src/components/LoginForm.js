@@ -70,7 +70,7 @@ const LoginForm = () => {
                 <Form.Control type='password' name='password' onChange={handleInput} placeholder='Пароль' />
                 {errors.password && <span className='text-danger'>{errors.password}</span>}
             </Form.Group>
-            <Button className='col-12' variant='primary' type='submit'>Войти</Button>
+            <Button className='col-12 button' variant='primary' type='submit'>Войти</Button>
         </Form>
     );
 };

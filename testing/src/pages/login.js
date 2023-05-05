@@ -3,7 +3,7 @@ import LoginForm from '../components/LoginForm';
 
 const Login = () => {
   return (
-    <div className="row justify-content-center">
+    <div className="row justify-content-center mx-0 login">
       <LoginForm />
     </div>
   );

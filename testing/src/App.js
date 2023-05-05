@@ -5,7 +5,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 
 import { ContextProvider } from './components/Context';
 
-import Navbar from './components/Navbar';
 import Home from './pages';
 import About from './pages/about';
 import Blogs from './pages/blogs';
@@ -17,7 +16,6 @@ const App = () => {
   return (
     <ContextProvider>
       <Router>
-        <Navbar />
         <Routes>
           <Route exact path='/' element={<Navigate to='/login' />} />
           <Route path='/login' element={<Login />} />
