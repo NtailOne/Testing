@@ -1,27 +1,16 @@
 import React, { useState, useEffect, useContext } from 'react';
-import axios from 'axios';
-import { Table, Button, Modal, Form } from 'react-bootstrap';
+import { Container, Row, Col, Button, Navbar, Nav } from 'react-bootstrap';
 import { Context } from '../../components/Context';
+import ItemsList from './itemsList';
 
 const AdminPage = () => {
-    const { serverURL, setAdminLogged } = useContext(Context);
+    const { setAdminLogged } = useContext(Context);
+    const [isMenuOpen, setIsMenuOpen] = useState(true);
 
-    const [items, setItems] = useState([]);
-    const [selectedItem, setSelectedItem] = useState({});
-    const [showAddModal, setShowAddModal] = useState(false);
-    const [showEditModal, setShowEditModal] = useState(false);
-
-    useEffect(() => {
-        window.addEventListener('beforeunload', (event) => handleUnload(event));
-
-        axios.get('/api/items').then((response) => {
-            setItems(response.data);
-        });
-
-        return () => {
-            window.removeEventListener('beforeunload', (event) => handleUnload(event));
-        }
-    }, []);
+    const toggleMenu = () => {
+        console.log('CHANGED')
+        setIsMenuOpen(!isMenuOpen);
+    };
 
     const handleUnload = (event) => {
         event.preventDefault();
@@ -37,158 +26,37 @@ const AdminPage = () => {
         setAdminLogged(false);
     }
 
-    const handleShowAddModal = () => {
-        setShowAddModal(true);
-    };
-
-    const handleShowEditModal = (item) => {
-        setSelectedItem(item);
-        setShowEditModal(true);
-    };
-
-    const handleDelete = (id) => {
-        axios.delete(`/api/items/${id}`).then(() => {
-            setItems(items.filter((item) => item.id !== id));
-        });
-    };
-
-    const handleAddSubmit = (event) => {
-        event.preventDefault();
-
-        const form = event.target;
-        const body = {
-            title: form.title.value,
-            description: form.description.value,
-        };
-
-        axios.post('/api/items', body).then((response) => {
-            setItems([...items, response.data]);
-            setShowAddModal(false);
-        });
-    };
-
-    const handleEditSubmit = (event) => {
-        event.preventDefault();
-
-        const form = event.target;
-        const body = {
-            title: form.title.value,
-            description: form.description.value,
-        };
-
-        axios.put(`/api/items/${selectedItem.id}`, body).then(() => {
-            setItems(
-                items.map((item) =>
-                    item.id === selectedItem.id ? { ...item, ...body } : item
-                )
-            );
-            setShowEditModal(false);
-        });
-    };
+    useEffect(() => {
+        window.addEventListener('beforeunload', (event) => handleUnload(event));
+        return () => {
+            window.removeEventListener('beforeunload', (event) => handleUnload(event));
+        }
+    }, []);
 
     return (
-        <div className="container">
-            <Button variant="primary" onClick={handleShowAddModal}>
-                Добавить
+        <div>
+            <Button className='text-uppercase' variant='danger' onClick={handleLogout}>
+                выйти
             </Button>
-            <Button variant="danger" onClick={handleLogout}>
-                ВЫЙТИ
-            </Button>
-
-            <Table striped bordered hover>
-                <thead>
-                    <tr>
-                        <th>Название</th>
-                        <th>Описание</th>
-                        <th>Действия</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {items.map((item) => (
-                        <tr key={item.id}>
-                            <td>{item.title}</td>
-                            <td>{item.description}</td>
-                            <td>
-                                <Button
-                                    variant="warning"
-                                    onClick={() => handleShowEditModal(item)}
-                                >
-                                    Редактировать
-                                </Button>{' '}
-                                <Button
-                                    variant="danger"
-                                    onClick={() => handleDelete(item.id)}
-                                >
-                                    Удалить
-                                </Button>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </Table>
-
-            <Modal show={showAddModal} onHide={() => setShowAddModal(false)}>
-                <Form onSubmit={handleAddSubmit}>
-                    <Modal.Header closeButton>
-                        <Modal.Title>Добавить элемент</Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>
-                        <Form.Group controlId="title">
-                            <Form.Label>Название</Form.Label>
-                            <Form.Control type="text" placeholder="Введите название" />
-                        </Form.Group>
-                        <Form.Group controlId="description">
-                            <Form.Label>Описание</Form.Label>
-                            <Form.Control
-                                as="textarea"
-                                rows={3}
-                                placeholder="Введите описание"
-                            />
-                        </Form.Group>
-                    </Modal.Body>
-                    <Modal.Footer>
-                        <Button variant="secondary" onClick={() => setShowAddModal(false)}>
-                            Отмена
-                        </Button>
-                        <Button variant="primary" type="submit">
-                            Добавить
-                        </Button>
-                    </Modal.Footer>
-                </Form>
-            </Modal>
-
-            <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
-                <Form onSubmit={handleEditSubmit}>
-                    <Modal.Header closeButton>
-                        <Modal.Title>Редактировать элемент</Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>
-                        <Form.Group controlId="title">
-                            <Form.Label>Название</Form.Label>
-                            <Form.Control
-                                type="text"
-                                defaultValue={selectedItem.title}
-                            />
-                        </Form.Group>
-                        <Form.Group controlId="description">
-                            <Form.Label>Описание</Form.Label>
-                            <Form.Control
-                                as="textarea"
-                                rows={3}
-                                defaultValue={selectedItem.description}
-                            />
-                        </Form.Group>
-                    </Modal.Body>
-                    <Modal.Footer>
-                        <Button variant="secondary" onClick={() => setShowEditModal(false)}>
-                            Отмена
-                        </Button>
-                        <Button variant="primary" type="submit">
-                            Сохранить изменения
-                        </Button>
-                    </Modal.Footer>
-                </Form>
-            </Modal>
+            <Container fluid>
+                <Row>
+                    <Col md={2}>
+                        <Navbar bg='light' expand='md' className='flex-column'>
+                            <Button variant='outline-dark' onClick={toggleMenu} className='d-md-none'>
+                                {isMenuOpen ? 'Close' : 'Menu'}
+                            </Button>
+                            <Nav className={`flex-column mt-2 mt-md-0 ${isMenuOpen ? '' : 'd-none'}`}>
+                                <Nav.Link href='#'>Link 1</Nav.Link>
+                                <Nav.Link href='#'>Link 2</Nav.Link>
+                                <Nav.Link href='#'>Link 3</Nav.Link>
+                            </Nav>
+                        </Navbar>
+                    </Col>
+                    <Col md={10}>
+                        <ItemsList />
+                    </Col>
+                </Row>
+            </Container>
         </div>
     );
 };
