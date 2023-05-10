@@ -1,5 +1,6 @@
 # dependencies
 /server/node_modules
+/server/config
 /testing/node_modules
 /tesing/.pnp
 /testing/.pnp.js

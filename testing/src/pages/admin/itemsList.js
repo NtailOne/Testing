@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Table, Button, Modal, Form } from 'react-bootstrap';
 
-const ItemsList = () => {
+const ItemsList = ({type}) => {
     const [items, setItems] = useState([]);
     const [selectedItem, setSelectedItem] = useState({});
     const [showAddModal, setShowAddModal] = useState(false);
@@ -65,6 +65,8 @@ const ItemsList = () => {
 
     return (
         <div className="container">
+            <h1>{type}</h1>
+
             <Button variant="primary" onClick={handleShowAddModal}>
                 Добавить
             </Button>
