@@ -42,3 +42,16 @@
 .table-hover>tbody>tr:hover>* {
     color: yellow;
 }
+
+.admin-menu a {
+    min-height: 5vh;
+    text-align: center;
+}
+
+.admin-menu>* {
+    height: 100vh;
+}
+
+.navbar-nav .nav-link.active {
+    color: white;
+}

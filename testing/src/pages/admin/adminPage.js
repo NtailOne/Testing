@@ -56,17 +56,14 @@ const AdminPage = () => {
 
     return (
         <div>
-            <Button className='text-uppercase' variant='danger' onClick={handleLogout}>
-                выйти
-            </Button>
             <Container fluid>
                 <Row>
-                    <Col md={2}>
-                        <Navbar bg='light' expand='md' className='flex-column'>
+                    <Col md={2} className='admin-menu p-0'>
+                        <Navbar bg='light' expand='md' className='flex-column pt-4'>
                             <Button variant='outline-dark' onClick={toggleMenu} className='d-md-none'>
                                 {isMenuOpen ? 'Close' : 'Menu'}
                             </Button>
-                            <Nav className={`flex-column mt-2 mt-md-0 ${isMenuOpen ? '' : 'd-none'}`}>
+                            <Nav className={`w-100 flex-column mt-2 mt-md-0 ${isMenuOpen ? '' : 'd-none'}`}>
                                 <Nav.Link className={selectedType === 'users' ? 'active' : ''} onClick={() => setSelectedType('users')}>Пользователи</Nav.Link>
                                 <Nav.Link className={selectedType === 'courses' ? 'active' : ''} onClick={() => setSelectedType('courses')}>Курсы</Nav.Link>
                                 <Nav.Link className={selectedType === 'groups' ? 'active' : ''} onClick={() => setSelectedType('groups')}>Группы</Nav.Link>
