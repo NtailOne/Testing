@@ -76,7 +76,7 @@ const Users = () => {
                 </Button>
             </div>
 
-            <Table striped bordered hover >
+            <Table bordered hover className='bg-white text-black'>
                 <thead>
                     <tr>
                         <th>Роль</th>

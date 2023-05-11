@@ -76,7 +76,7 @@ const Groups = () => {
                 </Button>
             </div>
 
-            <Table bordered hover className=''>
+            <Table hover bordered className='bg-white text-black'>
                 <thead>
                     <tr>
                         <th>Группа</th>

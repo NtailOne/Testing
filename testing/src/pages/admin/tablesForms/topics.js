@@ -76,7 +76,7 @@ const Topics = () => {
                 </Button>
             </div>
 
-            <Table striped bordered hover>
+            <Table bordered hover className='bg-white text-black'>
                 <thead>
                     <tr>
                         <th>Тема</th>

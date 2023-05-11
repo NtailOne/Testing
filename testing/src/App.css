@@ -25,20 +25,15 @@
     font-weight: bold;
 }
 
-.active {
-    transform: translateX(10px)
+@media (min-width: 768px) {
+    .active {
+        transform: translateX(15px);
+        transition: transform 0.3s ease;
+    }
 }
 
 .active:hover {
     color: #fff;
-}
-
-.table-striped>tbody>tr:nth-of-type(odd)>* {
-    color: black;
-}
-
-.table-hover>tbody>tr:hover>* {
-    color: yellow;
 }
 
 .admin-menu a {
@@ -96,7 +91,10 @@
     filter: grayscale(1);
 }
 
-.kniga {
-    background-color: white;
-    border-radius: 10px;
+.border-rounded {
+    border-radius: 0.375rem;
+}
+
+.text-black * {
+    color: black;
 }
