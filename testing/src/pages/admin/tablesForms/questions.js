@@ -13,8 +13,8 @@ const Questions = () => {
     useEffect(() => {
         axios.get(`/questions`).then((response) => {
             setItems(response.data);
+            console.log(items)
         });
-        console.log(items)
     }, []);
 
     const handleShowAddModal = () => {
@@ -66,31 +66,34 @@ const Questions = () => {
         });
     };
 
-    return(
-        <div className="container">
-        <div className='d-flex justify-content-between mb-4'>
-            <h1>{tableName}</h1>
+    return (
+        <div className="container pt-4">
+            <div className='d-flex justify-content-between mb-4'>
+                <h1>{tableName}</h1>
 
-            <Button className='col-2' variant="primary" onClick={handleShowAddModal}>
-                Добавить
-            </Button>
-        </div>
+                <Button className='col-2' variant="primary" onClick={handleShowAddModal}>
+                    Добавить
+                </Button>
+            </div>
 
-        <Table striped bordered hover>
+            <Table striped bordered hover>
                 <thead>
                     <tr>
-                        <th>Название</th>
-                        <th>Описание</th>
+                        <th>Тема</th>
+                        <th>Вопрос</th>
+                        <th>Ответы</th>
                         <th>Действия</th>
                     </tr>
                 </thead>
                 <tbody>
                     {items.map((item) => (
                         <tr key={item.id}>
-                            <td>{item.title}</td>
+                            <td>{item.topic_name}</td>
+                            <td>{item.body}</td>
                             <td>{item.description}</td>
-                            <td>
+                            <td className='d-flex justify-content-end'>
                                 <Button
+                                    className='me-2'
                                     variant="warning"
                                     onClick={() => handleShowEditModal(item)}
                                 >

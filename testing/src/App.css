@@ -26,17 +26,15 @@
 }
 
 .active {
-    background-color: #007bff;
-    color: #fff;
+    transform: translateX(10px)
 }
 
 .active:hover {
-    background-color: #0069d9;
     color: #fff;
 }
 
 .table-striped>tbody>tr:nth-of-type(odd)>* {
-    color: white;
+    color: black;
 }
 
 .table-hover>tbody>tr:hover>* {
@@ -46,12 +44,59 @@
 .admin-menu a {
     min-height: 5vh;
     text-align: center;
-}
-
-.admin-menu>* {
-    height: 100vh;
+    font-size: large;
+    font-weight: bold;
+    color: #131313;
 }
 
 .navbar-nav .nav-link.active {
     color: white;
+}
+
+.red-chalk {
+    background-image: url('./images/red-chalk.png');
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center center;
+}
+
+.orange-chalk {
+    background-image: url('./images/orange-chalk.png');
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center center;
+}
+
+.yellow-chalk {
+    background-image: url('./images/yellow-chalk.png');
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center center;
+}
+
+.green-chalk {
+    background-image: url('./images/green-chalk.png');
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center center;
+}
+
+.blue-chalk {
+    background-image: url('./images/blue-chalk.png');
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center center;
+}
+
+.black-chalk {
+    background-image: url('./images/red-chalk.png');
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center center;
+    filter: grayscale(1);
+}
+
+.kniga {
+    background-color: white;
+    border-radius: 10px;
 }

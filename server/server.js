@@ -72,6 +72,58 @@ const PORT = config.get('serverPort');
             }
         });
 
+        app.get('/groups', async (req, res) => {
+            const sql = `SELECT courses_groups.id, courses_groups.group_name, courses.course_num
+                FROM courses_groups
+                JOIN courses ON courses_groups.course_id = courses.id;`;
+            try {
+                const [rows] = await pool.execute(sql);
+                res.send(rows);
+            } catch (err) {
+                console.error(err);
+                res.status(500).json({ error: 'Internal server error' });
+            }
+        });
+
+        app.get('/topics', async (req, res) => {
+            const sql = `SELECT * FROM topics;`;
+            try {
+                const [rows] = await pool.execute(sql);
+                res.send(rows);
+            } catch (err) {
+                console.error(err);
+                res.status(500).json({ error: 'Internal server error' });
+            }
+        });
+
+        app.get('/questions', async (req, res) => {
+            const sql = `SELECT questions.id, topics.topic_name, questions.body
+                FROM questions
+                JOIN topics ON questions.topic_id = topics.id;`;
+            try {
+                const [rows] = await pool.execute(sql);
+                res.send(rows);
+            } catch (err) {
+                console.error(err);
+                res.status(500).json({ error: 'Internal server error' });
+            }
+        });
+
+        app.get('/tests', async (req, res) => {
+            const sql = `SELECT tests.id, tests.test_name, tests.start_time, tests.end_time, courses.course_num, courses_groups.group_name, CONCAT(users.surname, ' ', users.name, ' ', users.patronymic) AS student_name
+                FROM tests
+                JOIN courses ON tests.course = courses.id
+                LEFT JOIN courses_groups ON tests.group = courses_groups.id
+                LEFT JOIN users ON tests.student = users.id;`;
+            try {
+                const [rows] = await pool.execute(sql);
+                res.send(rows);
+            } catch (err) {
+                console.error(err);
+                res.status(500).json({ error: 'Internal server error' });
+            }
+        });
+
         // Обработка неопределенных URL-адресов
         app.use((req, res) => {
             res.status(404).send('Not found');

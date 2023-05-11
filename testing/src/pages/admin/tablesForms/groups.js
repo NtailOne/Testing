@@ -13,8 +13,8 @@ const Groups = () => {
     useEffect(() => {
         axios.get(`/groups`).then((response) => {
             setItems(response.data);
+            console.log(items)
         });
-        console.log(items)
     }, []);
 
     const handleShowAddModal = () => {
@@ -67,37 +67,38 @@ const Groups = () => {
     };
 
     return (
-        <div className="container">
+        <div className='container pt-4'>
             <div className='d-flex justify-content-between mb-4'>
                 <h1>{tableName}</h1>
 
-                <Button className='col-2' variant="primary" onClick={handleShowAddModal}>
+                <Button className='col-2' variant='primary' onClick={handleShowAddModal}>
                     Добавить
                 </Button>
             </div>
 
-            <Table striped bordered hover>
+            <Table bordered hover className=''>
                 <thead>
                     <tr>
-                        <th>Название</th>
-                        <th>Описание</th>
+                        <th>Группа</th>
+                        <th>Курс</th>
                         <th>Действия</th>
                     </tr>
                 </thead>
                 <tbody>
                     {items.map((item) => (
                         <tr key={item.id}>
-                            <td>{item.title}</td>
-                            <td>{item.description}</td>
-                            <td>
+                            <td>{item.group_name}</td>
+                            <td>{item.course_num}</td>
+                            <td className='d-flex justify-content-end'>
                                 <Button
-                                    variant="warning"
+                                    className='me-2'
+                                    variant='warning'
                                     onClick={() => handleShowEditModal(item)}
                                 >
                                     Редактировать
                                 </Button>{' '}
                                 <Button
-                                    variant="danger"
+                                    variant='danger'
                                     onClick={() => handleDelete(item.id)}
                                 >
                                     Удалить
@@ -114,24 +115,24 @@ const Groups = () => {
                         <Modal.Title>Добавить элемент</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
-                        <Form.Group controlId="title">
+                        <Form.Group controlId='title'>
                             <Form.Label>Название</Form.Label>
-                            <Form.Control type="text" placeholder="Введите название" />
+                            <Form.Control type='text' placeholder='Введите название' />
                         </Form.Group>
-                        <Form.Group controlId="description">
+                        <Form.Group controlId='description'>
                             <Form.Label>Описание</Form.Label>
                             <Form.Control
-                                as="textarea"
+                                as='textarea'
                                 rows={3}
-                                placeholder="Введите описание"
+                                placeholder='Введите описание'
                             />
                         </Form.Group>
                     </Modal.Body>
                     <Modal.Footer>
-                        <Button variant="secondary" onClick={() => setShowAddModal(false)}>
+                        <Button variant='secondary' onClick={() => setShowAddModal(false)}>
                             Отмена
                         </Button>
-                        <Button variant="primary" type="submit">
+                        <Button variant='primary' type='submit'>
                             Добавить
                         </Button>
                     </Modal.Footer>
@@ -144,27 +145,27 @@ const Groups = () => {
                         <Modal.Title>Редактировать элемент</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
-                        <Form.Group controlId="title">
+                        <Form.Group controlId='title'>
                             <Form.Label>Название</Form.Label>
                             <Form.Control
-                                type="text"
+                                type='text'
                                 defaultValue={selectedItem.title}
                             />
                         </Form.Group>
-                        <Form.Group controlId="description">
+                        <Form.Group controlId='description'>
                             <Form.Label>Описание</Form.Label>
                             <Form.Control
-                                as="textarea"
+                                as='textarea'
                                 rows={3}
                                 defaultValue={selectedItem.description}
                             />
                         </Form.Group>
                     </Modal.Body>
                     <Modal.Footer>
-                        <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+                        <Button variant='secondary' onClick={() => setShowEditModal(false)}>
                             Отмена
                         </Button>
-                        <Button variant="primary" type="submit">
+                        <Button variant='primary' type='submit'>
                             Сохранить изменения
                         </Button>
                     </Modal.Footer>

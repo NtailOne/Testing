@@ -13,8 +13,8 @@ const Tests = () => {
     useEffect(() => {
         axios.get(`/tests`).then((response) => {
             setItems(response.data);
+            console.log(items)
         });
-        console.log(items)
     }, []);
 
     const handleShowAddModal = () => {
@@ -67,7 +67,7 @@ const Tests = () => {
     };
 
     return (
-        <div className="container">
+        <div className="container pt-4">
             <div className='d-flex justify-content-between mb-4'>
                 <h1>{tableName}</h1>
 
@@ -80,17 +80,24 @@ const Tests = () => {
                 <thead>
                     <tr>
                         <th>Название</th>
-                        <th>Описание</th>
+                        <th>Время доступа</th>
+                        <th>Курс</th>
+                        <th>Группа</th>
+                        <th>Студент</th>
                         <th>Действия</th>
                     </tr>
                 </thead>
                 <tbody>
                     {items.map((item) => (
                         <tr key={item.id}>
-                            <td>{item.title}</td>
-                            <td>{item.description}</td>
-                            <td>
+                            <td>{item.test_name}</td>
+                            <td>{item.start_time} - {item.end_time}</td>
+                            <td>{item.course_num}</td>
+                            <td>{item.group_name}</td>
+                            <td>{item.student_name}</td>
+                            <td className='d-flex justify-content-end'>
                                 <Button
+                                    className='me-2'
                                     variant="warning"
                                     onClick={() => handleShowEditModal(item)}
                                 >

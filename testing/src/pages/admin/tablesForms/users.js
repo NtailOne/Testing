@@ -13,8 +13,8 @@ const Users = () => {
     useEffect(() => {
         axios.get(`/users`).then((response) => {
             setItems(response.data);
+            console.log(items)
         });
-        console.log(items)
     }, []);
 
     const handleShowAddModal = () => {
@@ -67,7 +67,7 @@ const Users = () => {
     };
 
     return (
-        <div className="container">
+        <div className="container pt-4">
             <div className='d-flex justify-content-between mb-4'>
                 <h1>{tableName}</h1>
 
@@ -95,9 +95,9 @@ const Users = () => {
                             <td>{item.email}</td>
                             <td>{item.course_num}</td>
                             <td>{item.group_name}</td>
-                            <td className='d-flex'>
+                            <td className='d-flex justify-content-end'>
                                 <Button
-                                    className='col me-2'
+                                    className='me-2'
                                     variant="warning"
                                     onClick={() => handleShowEditModal(item)}
                                 >
