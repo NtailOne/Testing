@@ -42,7 +42,7 @@ const PORT = config.get('serverPort');
                     res.status(401).send('Failed');
                 }
             } catch (err) {
-                console.log(err);
+                console.error(err);
                 res.json('Error');
             }
         });
@@ -54,6 +54,21 @@ const PORT = config.get('serverPort');
                 res.status(200).send('Success');
             } else {
                 res.status(401).send('Invalid login or password');
+            }
+        });
+
+        app.get('/users', async (req, res) => {
+            const sql = `SELECT u.id, r.role_name, c.course_num, g.group_name, u.email, u.surname, u.name, u.patronymic
+                FROM users u
+                JOIN roles r ON u.role_id = r.id
+                JOIN courses c ON u.course = c.id
+                JOIN courses_groups g ON u.group = g.id; `;
+            try {
+                const [rows] = await pool.execute(sql);
+                res.send(rows);
+            } catch (err) {
+                console.error(err);
+                res.status(500).json({ error: 'Internal server error' });
             }
         });
 

@@ -34,3 +34,11 @@
     background-color: #0069d9;
     color: #fff;
 }
+
+.table-striped>tbody>tr:nth-of-type(odd)>* {
+    color: white;
+}
+
+.table-hover>tbody>tr:hover>* {
+    color: yellow;
+}

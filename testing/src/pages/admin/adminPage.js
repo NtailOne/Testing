@@ -1,8 +1,13 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Container, Row, Col, Button, Navbar, Nav } from 'react-bootstrap';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { Context } from '../../components/Context';
-import ItemsList from './itemsList';
+
+import Users from './tablesForms/users';
+import Courses from './tablesForms/courses';
+import Groups from './tablesForms/groups';
+import Topics from './tablesForms/topics';
+import Questions from './tablesForms/questions';
+import Tests from './tablesForms/tests';
 
 const AdminPage = () => {
     const { setAdminLogged } = useContext(Context);
@@ -10,7 +15,6 @@ const AdminPage = () => {
     const [selectedType, setSelectedType] = useState('users');
 
     const toggleMenu = () => {
-        console.log('CHANGED')
         setIsMenuOpen(!isMenuOpen);
     };
 
@@ -36,19 +40,18 @@ const AdminPage = () => {
     }, []);
 
     let selectedComponent;
-  
     if (selectedType === 'users') {
-      selectedComponent = <ItemsList type='users' />;
+      selectedComponent = <Users/>;
     } else if (selectedType === 'courses') {
-      selectedComponent = <ItemsList type='courses' />;
+      selectedComponent = <Courses />;
     } else if (selectedType === 'groups') {
-      selectedComponent = <ItemsList type='groups' />;
+      selectedComponent = <Groups />;
     } else if (selectedType === 'topics') {
-      selectedComponent = <ItemsList type='topics' />;
+      selectedComponent = <Topics />;
     } else if (selectedType === 'questions') {
-      selectedComponent = <ItemsList type='questions' />;
+      selectedComponent = <Questions />;
     } else if (selectedType === 'tests') {
-      selectedComponent = <ItemsList type='tests' />;
+      selectedComponent = <Tests />;
     }
 
     return (

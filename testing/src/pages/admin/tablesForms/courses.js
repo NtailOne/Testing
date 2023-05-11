@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Table, Button, Modal, Form } from 'react-bootstrap';
+import axios from 'axios';
 
-const ItemsList = ({type}) => {
+const Courses = () => {
     const [items, setItems] = useState([]);
     const [selectedItem, setSelectedItem] = useState({});
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
 
+    let tableName = 'Курсы';
+
     useEffect(() => {
-        // axios.get('/api/items').then((response) => {
-        //     setItems(response.data);
-        // });
+        axios.get(`/courses`).then((response) => {
+            setItems(response.data);
+        });
+        console.log(items)
     }, []);
 
     const handleShowAddModal = () => {
@@ -24,9 +27,9 @@ const ItemsList = ({type}) => {
     };
 
     const handleDelete = (id) => {
-        // axios.delete(`/api/items/${id}`).then(() => {
-        //     setItems(items.filter((item) => item.id !== id));
-        // });
+        axios.delete(`/courses/${id}`).then(() => {
+            setItems(items.filter((item) => item.id !== id));
+        });
     };
 
     const handleAddSubmit = (event) => {
@@ -38,10 +41,10 @@ const ItemsList = ({type}) => {
             description: form.description.value,
         };
 
-        // axios.post('/api/items', body).then((response) => {
-        //     setItems([...items, response.data]);
-        //     setShowAddModal(false);
-        // });
+        axios.post(`/courses`, body).then((response) => {
+            setItems([...items, response.data]);
+            setShowAddModal(false);
+        });
     };
 
     const handleEditSubmit = (event) => {
@@ -53,23 +56,25 @@ const ItemsList = ({type}) => {
             description: form.description.value,
         };
 
-        // axios.put(`/api/items/${selectedItem.id}`, body).then(() => {
-        //     setItems(
-        //         items.map((item) =>
-        //             item.id === selectedItem.id ? { ...item, ...body } : item
-        //         )
-        //     );
-        //     setShowEditModal(false);
-        // });
+        axios.put(`/courses/${selectedItem.id}`, body).then(() => {
+            setItems(
+                items.map((item) =>
+                    item.id === selectedItem.id ? { ...item, ...body } : item
+                )
+            );
+            setShowEditModal(false);
+        });
     };
 
     return (
         <div className="container">
-            <h1>{type}</h1>
+            <div className='d-flex justify-content-between mb-4'>
+                <h1>{tableName}</h1>
 
-            <Button variant="primary" onClick={handleShowAddModal}>
-                Добавить
-            </Button>
+                <Button className='col-2' variant="primary" onClick={handleShowAddModal}>
+                    Добавить
+                </Button>
+            </div>
 
             <Table striped bordered hover>
                 <thead>
@@ -169,4 +174,4 @@ const ItemsList = ({type}) => {
     );
 };
 
-export default ItemsList;
+export default Courses;
