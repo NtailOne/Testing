@@ -60,13 +60,13 @@ const AdminPage = () => {
                             <Button variant='outline-dark' onClick={toggleMenu} className='d-md-none'>
                                 {isMenuOpen ? 'Close' : 'Menu'}
                             </Button>
-                            <Nav className={`w-100 flex-column mt-2 mt-md-0 ${isMenuOpen ? '' : 'd-none'}`}>
-                                <Nav.Link className={`red-chalk ${selectedType === 'users' ? 'active' : ''}`} onClick={() => setSelectedType('users')}>Пользователи</Nav.Link>
-                                <Nav.Link className={`orange-chalk ${selectedType === 'groups' ? 'active' : ''}`} onClick={() => setSelectedType('groups')}>Группы</Nav.Link>
-                                <Nav.Link className={`yellow-chalk ${selectedType === 'topics' ? 'active' : ''}`} onClick={() => setSelectedType('topics')}>Темы</Nav.Link>
-                                <Nav.Link className={`green-chalk ${selectedType === 'questions' ? 'active' : ''}`} onClick={() => setSelectedType('questions')}>Вопросы</Nav.Link>
-                                <Nav.Link className={`blue-chalk ${selectedType === 'tests' ? 'active' : ''}`} onClick={() => setSelectedType('tests')}>Тесты</Nav.Link>
-                                <Nav.Link className='black-chalk mt-4' onClick={handleLogout}>Выйти</Nav.Link>
+                            <Nav className={`w-100 flex-column mt-2 mt-md-0 gap-1 ${isMenuOpen ? '' : 'd-none'}`}>
+                                <Nav.Link className={`red-chalk px-0 rounded ${selectedType === 'users' ? 'active' : ''}`} onClick={() => setSelectedType('users')}>Пользователи</Nav.Link>
+                                <Nav.Link className={`orange-chalk px-0 rounded ${selectedType === 'groups' ? 'active' : ''}`} onClick={() => setSelectedType('groups')}>Группы</Nav.Link>
+                                <Nav.Link className={`yellow-chalk px-0 rounded ${selectedType === 'topics' ? 'active' : ''}`} onClick={() => setSelectedType('topics')}>Темы</Nav.Link>
+                                <Nav.Link className={`green-chalk px-0 rounded ${selectedType === 'questions' ? 'active' : ''}`} onClick={() => setSelectedType('questions')}>Вопросы</Nav.Link>
+                                <Nav.Link className={`blue-chalk px-0 rounded ${selectedType === 'tests' ? 'active' : ''}`} onClick={() => setSelectedType('tests')}>Тесты</Nav.Link>
+                                <Nav.Link className='black-chalk px-0 rounded mt-4' onClick={handleLogout}>Выйти</Nav.Link>
                             </Nav>
                         </Navbar>
                     </Col>

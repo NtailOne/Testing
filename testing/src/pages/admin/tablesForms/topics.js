@@ -87,9 +87,8 @@ const Topics = () => {
                     {items.map((item) => (
                         <tr key={item.id}>
                             <td>{item.topic_name}</td>
-                            <td className='d-flex justify-content-end'>
+                            <td className='d-flex flex-wrap justify-content-end gap-2'>
                                 <Button
-                                    className='me-2'
                                     variant="warning"
                                     onClick={() => handleShowEditModal(item)}
                                 >

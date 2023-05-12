@@ -76,7 +76,7 @@ const Users = () => {
                 </Button>
             </div>
 
-            <Table bordered hover className='bg-white text-black'>
+            <Table bordered hover className='bg-white text-black table-responsive'>
                 <thead>
                     <tr>
                         <th>Роль</th>
@@ -95,9 +95,8 @@ const Users = () => {
                             <td>{item.email}</td>
                             <td>{item.course_num}</td>
                             <td>{item.group_name}</td>
-                            <td className='d-flex justify-content-end'>
+                            <td className='d-flex flex-wrap justify-content-end gap-2'>
                                 <Button
-                                    className='me-2'
                                     variant="warning"
                                     onClick={() => handleShowEditModal(item)}
                                 >

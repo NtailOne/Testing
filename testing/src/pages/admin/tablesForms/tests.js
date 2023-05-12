@@ -95,9 +95,8 @@ const Tests = () => {
                             <td>{item.course_num}</td>
                             <td>{item.group_name}</td>
                             <td>{item.student_name}</td>
-                            <td className='d-flex justify-content-end'>
+                            <td className='d-flex flex-wrap justify-content-end gap-2'>
                                 <Button
-                                    className='me-2'
                                     variant="warning"
                                     onClick={() => handleShowEditModal(item)}
                                 >
