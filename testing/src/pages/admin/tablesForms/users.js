@@ -67,52 +67,54 @@ const Users = () => {
     };
 
     return (
-        <div className="container pt-4">
+        <div className="pt-4 mx-0 mx-md-3">
             <div className='d-flex justify-content-between mb-4'>
                 <h1>{tableName}</h1>
 
-                <Button className='col-2' variant="primary" onClick={handleShowAddModal}>
+                <Button className='col-auto col-md-2' variant="primary" onClick={handleShowAddModal}>
                     Добавить
                 </Button>
             </div>
 
-            <Table bordered hover className='bg-white text-black table-responsive'>
-                <thead>
-                    <tr>
-                        <th>Роль</th>
-                        <th>ФИО</th>
-                        <th>Электронная почта</th>
-                        <th>Курс</th>
-                        <th>Группа</th>
-                        <th>Действия</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {items.map((item) => (
-                        <tr key={item.id}>
-                            <td>{item.role_name}</td>
-                            <td>{item.surname} {item.name} {item.patronymic}</td>
-                            <td>{item.email}</td>
-                            <td>{item.course_num}</td>
-                            <td>{item.group_name}</td>
-                            <td className='d-flex flex-wrap justify-content-end gap-2'>
-                                <Button
-                                    variant="warning"
-                                    onClick={() => handleShowEditModal(item)}
-                                >
-                                    Редактировать
-                                </Button>{' '}
-                                <Button
-                                    variant="danger"
-                                    onClick={() => handleDelete(item.id)}
-                                >
-                                    Удалить
-                                </Button>
-                            </td>
+            <div className='table-responsive'>
+                <Table bordered hover className='bg-white text-black'>
+                    <thead>
+                        <tr>
+                            <th>Роль</th>
+                            <th>ФИО</th>
+                            <th>Электронная почта</th>
+                            <th>Курс</th>
+                            <th>Группа</th>
+                            <th>Действия</th>
                         </tr>
-                    ))}
-                </tbody>
-            </Table>
+                    </thead>
+                    <tbody>
+                        {items.map((item) => (
+                            <tr key={item.id}>
+                                <td>{item.role_name}</td>
+                                <td>{item.surname} {item.name} {item.patronymic}</td>
+                                <td>{item.email}</td>
+                                <td>{item.course_num}</td>
+                                <td>{item.group_name}</td>
+                                <td className='d-flex flex-wrap justify-content-end gap-2'>
+                                    <Button
+                                        variant="warning"
+                                        onClick={() => handleShowEditModal(item)}
+                                    >
+                                        Редактировать
+                                    </Button>{' '}
+                                    <Button
+                                        variant="danger"
+                                        onClick={() => handleDelete(item.id)}
+                                    >
+                                        Удалить
+                                    </Button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </Table>
+            </div>
 
             <Modal show={showAddModal} onHide={() => setShowAddModal(false)}>
                 <Form onSubmit={handleAddSubmit}>
