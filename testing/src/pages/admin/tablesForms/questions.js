@@ -13,7 +13,6 @@ const Questions = () => {
     useEffect(() => {
         axios.get(`/questions`).then((response) => {
             setItems(response.data);
-            console.log(items)
         });
     }, []);
 
@@ -76,39 +75,41 @@ const Questions = () => {
                 </Button>
             </div>
 
-            <Table bordered hover className='bg-white text-black'>
-                <thead>
-                    <tr>
-                        <th>Тема</th>
-                        <th>Вопрос</th>
-                        <th>Ответы</th>
-                        <th>Действия</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {items.map((item) => (
-                        <tr key={item.id}>
-                            <td>{item.topic_name}</td>
-                            <td>{item.body}</td>
-                            <td>{item.description}</td>
-                            <td className='d-flex flex-wrap justify-content-end gap-2'>
-                                <Button
-                                    variant="warning"
-                                    onClick={() => handleShowEditModal(item)}
-                                >
-                                    Редактировать
-                                </Button>{' '}
-                                <Button
-                                    variant="danger"
-                                    onClick={() => handleDelete(item.id)}
-                                >
-                                    Удалить
-                                </Button>
-                            </td>
+            <div className='table-responsive'>
+                <Table bordered hover className='bg-white text-black'>
+                    <thead>
+                        <tr>
+                            <th>Тема</th>
+                            <th>Вопрос</th>
+                            <th>Ответы</th>
+                            <th>Действия</th>
                         </tr>
-                    ))}
-                </tbody>
-            </Table>
+                    </thead>
+                    <tbody>
+                        {items.map((item) => (
+                            <tr key={item.id}>
+                                <td>{item.topic_name}</td>
+                                <td>{item.body}</td>
+                                <td>{item.description}</td>
+                                <td className='d-flex flex-wrap justify-content-end gap-2'>
+                                    <Button
+                                        variant="warning"
+                                        onClick={() => handleShowEditModal(item)}
+                                    >
+                                        Редактировать
+                                    </Button>{' '}
+                                    <Button
+                                        variant="danger"
+                                        onClick={() => handleDelete(item.id)}
+                                    >
+                                        Удалить
+                                    </Button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </Table>
+            </div>
 
             <Modal show={showAddModal} onHide={() => setShowAddModal(false)}>
                 <Form onSubmit={handleAddSubmit}>

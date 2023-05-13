@@ -98,3 +98,11 @@
 .text-black * {
     color: black;
 }
+
+.text-right {
+    text-align: end;
+}
+
+.modal-title, .form-label, .form-control>option {
+    color: black;
+}

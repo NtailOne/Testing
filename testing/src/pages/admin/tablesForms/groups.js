@@ -13,7 +13,6 @@ const Groups = () => {
     useEffect(() => {
         axios.get(`/groups`).then((response) => {
             setItems(response.data);
-            console.log(items)
         });
     }, []);
 
@@ -76,37 +75,39 @@ const Groups = () => {
                 </Button>
             </div>
 
-            <Table hover bordered className='bg-white text-black'>
-                <thead>
-                    <tr>
-                        <th>Группа</th>
-                        <th>Курс</th>
-                        <th>Действия</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {items.map((item) => (
-                        <tr key={item.id}>
-                            <td>{item.group_name}</td>
-                            <td>{item.course_num}</td>
-                            <td className='d-flex flex-wrap justify-content-end gap-2'>
-                                <Button
-                                    variant='warning'
-                                    onClick={() => handleShowEditModal(item)}
-                                >
-                                    Редактировать
-                                </Button>{' '}
-                                <Button
-                                    variant='danger'
-                                    onClick={() => handleDelete(item.id)}
-                                >
-                                    Удалить
-                                </Button>
-                            </td>
+            <div className='table-responsive'>
+                <Table hover bordered className='bg-white text-black'>
+                    <thead>
+                        <tr>
+                            <th>Группа</th>
+                            <th>Курс</th>
+                            <th>Действия</th>
                         </tr>
-                    ))}
-                </tbody>
-            </Table>
+                    </thead>
+                    <tbody>
+                        {items.map((item) => (
+                            <tr key={item.id}>
+                                <td>{item.group_name}</td>
+                                <td>{item.course_num}</td>
+                                <td className='d-flex flex-wrap justify-content-end gap-2'>
+                                    <Button
+                                        variant='warning'
+                                        onClick={() => handleShowEditModal(item)}
+                                    >
+                                        Редактировать
+                                    </Button>{' '}
+                                    <Button
+                                        variant='danger'
+                                        onClick={() => handleDelete(item.id)}
+                                    >
+                                        Удалить
+                                    </Button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </Table>
+            </div>
 
             <Modal show={showAddModal} onHide={() => setShowAddModal(false)}>
                 <Form onSubmit={handleAddSubmit}>

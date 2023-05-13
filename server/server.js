@@ -11,6 +11,16 @@ app.use(bodyParser.json());
 
 const PORT = config.get('serverPort');
 
+async function executeSelectSqlQuery(pool, sql, res) {
+    try {
+        const [rows] = await pool.execute(sql);
+        res.send(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+}
+
 (async () => {
 
     try {
@@ -29,7 +39,7 @@ const PORT = config.get('serverPort');
         });
 
         app.post('/login', async (req, res) => {
-            const sql = 'SELECT * FROM users WHERE `email` = ? AND `password` = ?';
+            const sql = 'SELECT * FROM users WHERE `email` = ? AND `password` = ?;';
             const values = [
                 req.body.email,
                 req.body.password,
@@ -63,50 +73,31 @@ const PORT = config.get('serverPort');
                 JOIN roles r ON u.role_id = r.id
                 JOIN courses c ON u.course = c.id
                 JOIN courses_groups g ON u.group = g.id; `;
-            try {
-                const [rows] = await pool.execute(sql);
-                res.send(rows);
-            } catch (err) {
-                console.error(err);
-                res.status(500).json({ error: 'Internal server error' });
-            }
+            await executeSelectSqlQuery(pool, sql, res);
+        });
+
+        app.get('/roles', async (req, res) => {
+            const sql = 'SELECT * FROM roles';
+            await executeSelectSqlQuery(pool, sql, res);
         });
 
         app.get('/groups', async (req, res) => {
             const sql = `SELECT courses_groups.id, courses_groups.group_name, courses.course_num
                 FROM courses_groups
                 JOIN courses ON courses_groups.course_id = courses.id;`;
-            try {
-                const [rows] = await pool.execute(sql);
-                res.send(rows);
-            } catch (err) {
-                console.error(err);
-                res.status(500).json({ error: 'Internal server error' });
-            }
+            await executeSelectSqlQuery(pool, sql, res);
         });
 
         app.get('/topics', async (req, res) => {
             const sql = `SELECT * FROM topics;`;
-            try {
-                const [rows] = await pool.execute(sql);
-                res.send(rows);
-            } catch (err) {
-                console.error(err);
-                res.status(500).json({ error: 'Internal server error' });
-            }
+            await executeSelectSqlQuery(pool, sql, res);
         });
 
         app.get('/questions', async (req, res) => {
             const sql = `SELECT questions.id, topics.topic_name, questions.body
                 FROM questions
                 JOIN topics ON questions.topic_id = topics.id;`;
-            try {
-                const [rows] = await pool.execute(sql);
-                res.send(rows);
-            } catch (err) {
-                console.error(err);
-                res.status(500).json({ error: 'Internal server error' });
-            }
+            await executeSelectSqlQuery(pool, sql, res);
         });
 
         app.get('/tests', async (req, res) => {
@@ -115,13 +106,7 @@ const PORT = config.get('serverPort');
                 JOIN courses ON tests.course = courses.id
                 LEFT JOIN courses_groups ON tests.group = courses_groups.id
                 LEFT JOIN users ON tests.student = users.id;`;
-            try {
-                const [rows] = await pool.execute(sql);
-                res.send(rows);
-            } catch (err) {
-                console.error(err);
-                res.status(500).json({ error: 'Internal server error' });
-            }
+            await executeSelectSqlQuery(pool, sql, res);
         });
 
         // Обработка неопределенных URL-адресов
