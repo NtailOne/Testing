@@ -137,7 +137,7 @@ async function executeSelectSqlQuery(pool, sql, res) {
             await executeSelectSqlQuery(pool, sql, res);
         });
 
-        // Запросы на изменение записей БД
+        // Запросы на добавление записей в БД
         app.post('/users', async (req, res) => {
             const { role_id, email, password, surname, name, patronymic, course_id, group_id } = req.body;
             try {
@@ -156,6 +156,12 @@ async function executeSelectSqlQuery(pool, sql, res) {
                 res.status(500).send('Ошибка при добавлении пользователя в базу данных');
             }
         });
+
+        // Запросы на изменений записей в БД
+        
+
+        // Запросы на удаление записей из БД
+
 
         // Обработка неопределенных URL-адресов
         app.use((req, res) => {

@@ -283,7 +283,7 @@ const Users = () => {
                         </Form.Group>
                         <Form.Group controlId="password">
                             <Form.Label className='mb-1 mt-2'>Пароль</Form.Label>
-                            <Form.Control type={passwordVisible ? 'text' : 'password'} defaultValue={selectedUser.password} required placeholder="Введите пароль"
+                            <Form.Control type={passwordVisible ? 'text' : 'password'} required placeholder="Пустое поле - без изменений"
                             />
                             <Form.Text onClick={togglePasswordVisibility} className='d-block text-right pointer'>
                                 {passwordVisible ? 'Скрыть пароль' : 'Показать пароль'}
@@ -328,7 +328,7 @@ const Users = () => {
                                 </Form.Group>
                                 <Form.Group controlId="group">
                                     <Form.Label className='mb-1 mt-2'>Группа</Form.Label>
-                                    <Form.Control as="select" className='pointer' required defaultValue={selectedUser.group || ""}>
+                                    <Form.Control as="select" className='pointer' required defaultValue={selectedUser.group_id || ""}>
                                         <option disabled value="">
                                             Выберите группу
                                         </option>
