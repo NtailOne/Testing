@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const config = require('config');
 const mysql = require('mysql2/promise');
 const cors = require('cors');
+const bcrypt = require('bcrypt');
 
 const app = express();
 app.use(cors());
@@ -67,12 +68,9 @@ async function executeSelectSqlQuery(pool, sql, res) {
             }
         });
 
+        // Запросы на получение записей БД
         app.get('/users', async (req, res) => {
-            const sql = `SELECT u.id, r.role_name, c.course_num, g.group_name, u.email, u.surname, u.name, u.patronymic
-                FROM users u
-                JOIN roles r ON u.role_id = r.id
-                JOIN courses c ON u.course = c.id
-                JOIN courses_groups g ON u.group = g.id; `;
+            const sql = 'SELECT * FROM users';
             await executeSelectSqlQuery(pool, sql, res);
         });
 
@@ -81,10 +79,13 @@ async function executeSelectSqlQuery(pool, sql, res) {
             await executeSelectSqlQuery(pool, sql, res);
         });
 
+        app.get('/courses', async (req, res) => {
+            const sql = `SELECT * FROM courses`;
+            await executeSelectSqlQuery(pool, sql, res);
+        });
+
         app.get('/groups', async (req, res) => {
-            const sql = `SELECT courses_groups.id, courses_groups.group_name, courses.course_num
-                FROM courses_groups
-                JOIN courses ON courses_groups.course_id = courses.id;`;
+            const sql = 'SELECT * FROM courses_groups';
             await executeSelectSqlQuery(pool, sql, res);
         });
 
@@ -94,19 +95,66 @@ async function executeSelectSqlQuery(pool, sql, res) {
         });
 
         app.get('/questions', async (req, res) => {
+            const sql = 'SELECT * FROM questions';
+            await executeSelectSqlQuery(pool, sql, res);
+        });
+
+        app.get('/tests', async (req, res) => {
+            const sql = 'SELECT * FROM tests';
+            await executeSelectSqlQuery(pool, sql, res);
+        });
+
+        // Запросы для отображения записей в таблицах
+        app.get('/users-table', async (req, res) => {
+            const sql = `SELECT u.id, u.surname, u.name, u.patronymic, u.email, r.role_name, c.course_num, g.group_name
+                FROM users u
+                JOIN roles r ON u.role_id = r.id
+                LEFT JOIN courses c ON u.course_id = c.id
+                LEFT JOIN courses_groups g ON u.group_id = g.id;`;
+            await executeSelectSqlQuery(pool, sql, res);
+        });
+
+        app.get('/groups-table', async (req, res) => {
+            const sql = `SELECT courses_groups.id, courses_groups.group_name, courses.course_num
+                FROM courses_groups
+                JOIN courses ON courses_groups.course_id = courses.id;`;
+            await executeSelectSqlQuery(pool, sql, res);
+        });
+
+        app.get('/questions-table', async (req, res) => {
             const sql = `SELECT questions.id, topics.topic_name, questions.body
                 FROM questions
                 JOIN topics ON questions.topic_id = topics.id;`;
             await executeSelectSqlQuery(pool, sql, res);
         });
 
-        app.get('/tests', async (req, res) => {
+        app.get('/tests-table', async (req, res) => {
             const sql = `SELECT tests.id, tests.test_name, tests.start_time, tests.end_time, courses.course_num, courses_groups.group_name, CONCAT(users.surname, ' ', users.name, ' ', users.patronymic) AS student_name
                 FROM tests
-                JOIN courses ON tests.course = courses.id
-                LEFT JOIN courses_groups ON tests.group = courses_groups.id
-                LEFT JOIN users ON tests.student = users.id;`;
+                JOIN courses ON tests.course_id = courses.id
+                LEFT JOIN courses_groups ON tests.group_id = courses_groups.id
+                LEFT JOIN users ON tests.student_id = users.id;`;
             await executeSelectSqlQuery(pool, sql, res);
+        });
+
+        // Запросы на изменение записей БД
+        app.post('/users', async (req, res) => {
+            const { role_id, email, password, surname, name, patronymic, course_id, group_id } = req.body;
+            try {
+                const hashedPassword = await bcrypt.hash(password, 10);
+
+                const sql = `INSERT INTO users (role_id, email, password, surname, name, patronymic, course_id, group_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?);`;
+
+                const params = [role_id, email, hashedPassword, surname, name, patronymic, course_id || null, group_id || null];
+                const result = await pool.execute(sql, params);
+
+                console.log(`Добавлен пользователь с id ${result[0].insertId}`);
+                res.status(200).send('Пользователь успешно добавлен в базу данных');
+            } catch (error) {
+                console.error(error);
+                res.status(500).send('Ошибка при добавлении пользователя в базу данных');
+            }
         });
 
         // Обработка неопределенных URL-адресов
@@ -119,8 +167,9 @@ async function executeSelectSqlQuery(pool, sql, res) {
             console.log('Сервер запущен на порту: ', PORT);
         });
     } catch (e) {
+        // Остановка приложения в случае ошибки подключения к базе данных
         console.error(e);
-        process.exit(1); // Остановка приложения в случае ошибки подключения к базе данных
+        process.exit(1);
     }
 
 })();

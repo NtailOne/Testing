@@ -95,7 +95,7 @@
     border-radius: 0.375rem;
 }
 
-.text-black * {
+.table * {
     color: black;
 }
 
@@ -103,6 +103,10 @@
     text-align: end;
 }
 
-.modal-title, .form-label, .form-control>option {
+.modal-title, .modal-body *{
     color: black;
+}
+
+.pointer {
+    cursor: pointer;
 }

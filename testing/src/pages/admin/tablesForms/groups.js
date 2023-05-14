@@ -11,7 +11,7 @@ const Groups = () => {
     let tableName = 'Группы';
 
     useEffect(() => {
-        axios.get(`/groups`).then((response) => {
+        axios.get(`/groups-table`).then((response) => {
             setItems(response.data);
         });
     }, []);
