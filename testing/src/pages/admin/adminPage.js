@@ -40,15 +40,15 @@ const AdminPage = () => {
 
     let selectedComponent;
     if (selectedType === 'users') {
-      selectedComponent = <Users/>;
+        selectedComponent = <Users />;
     } else if (selectedType === 'groups') {
-      selectedComponent = <Groups />;
+        selectedComponent = <Groups />;
     } else if (selectedType === 'topics') {
-      selectedComponent = <Topics />;
+        selectedComponent = <Topics />;
     } else if (selectedType === 'questions') {
-      selectedComponent = <Questions />;
+        selectedComponent = <Questions />;
     } else if (selectedType === 'tests') {
-      selectedComponent = <Tests />;
+        selectedComponent = <Tests />;
     }
 
     return (
@@ -56,11 +56,11 @@ const AdminPage = () => {
             <Container fluid>
                 <Row>
                     <Col md={2} className='admin-menu p-0'>
-                        <Navbar expand='md' className='flex-column pt-4'>
-                            <Button variant='outline-dark' onClick={toggleMenu} className='d-md-none'>
-                                {isMenuOpen ? 'Close' : 'Menu'}
+                        <Navbar expand='md' className='flex-column mt-4 px-3 px-md-0'>
+                            <Button onClick={toggleMenu} className='d-md-none col-12 outline-dark bg-white text-dark text-bold mb-1'>
+                                {isMenuOpen ? 'Закрыть меню' : 'Открыть меню'}
                             </Button>
-                            <Nav className={`w-100 flex-column mt-2 mt-md-0 gap-1 ${isMenuOpen ? '' : 'd-none'}`}>
+                            <Nav className={`col-12 flex-column mt-2 mt-md-0 gap-1 ${isMenuOpen ? '' : 'd-none d-md-block'}`}>
                                 <Nav.Link className={`red-chalk px-0 rounded ${selectedType === 'users' ? 'active' : ''}`} onClick={() => setSelectedType('users')}>Пользователи</Nav.Link>
                                 <Nav.Link className={`orange-chalk px-0 rounded ${selectedType === 'groups' ? 'active' : ''}`} onClick={() => setSelectedType('groups')}>Группы</Nav.Link>
                                 <Nav.Link className={`yellow-chalk px-0 rounded ${selectedType === 'topics' ? 'active' : ''}`} onClick={() => setSelectedType('topics')}>Темы</Nav.Link>

@@ -67,7 +67,7 @@ const Topics = () => {
 
     return (
         <div className="container pt-4">
-            <div className='d-flex justify-content-between mb-4'>
+            <div className='d-flex flex-wrap justify-content-between mb-4'>
                 <h1>{tableName}</h1>
 
                 <Button className='col-2' variant="primary" onClick={handleShowAddModal}>

@@ -91,8 +91,8 @@ const Users = () => {
             name: form.name.value,
             patronymic: form.patronymic.value,
             role_id: form.role.value,
-            course_id: form.course.value === "" ? null : form.course.value,
-            group_id: form.group.value === "" ? null : form.group.value
+            course_id: form.course ? form.course.value : null,
+            group_id: form.group ? form.group.value : null
         };
 
         if (password_pattern.test(form.password.value)) {
@@ -118,23 +118,25 @@ const Users = () => {
             name: form.name.value,
             patronymic: form.patronymic.value,
             role_id: form.role.value,
-            course_id: form.course.value === "" ? null : form.course.value,
-            group_id: form.group.value === "" ? null : form.group.value
+            course_id: form.course ? form.course.value : null,
+            group_id: form.group ? form.group.value : null
         };
 
-        axios.put(`/users/${selectedUser.id}`, body).then(() => {
-            setUsers(
-                users.map((user) =>
-                    user.id === selectedUser.id ? { ...user, ...body } : user
-                )
-            );
-            setShowEditModal(false);
-        });
+        if (form.password.value === "" || password_pattern.test(form.password.value)) {
+            axios.put(`/users/${selectedUser.id}`, body).then(() => {
+                setUsers(
+                    users.map((user) =>
+                        user.id === selectedUser.id ? { ...user, ...body } : user
+                    )
+                );
+                setShowEditModal(false);
+            });
+        }
     };
 
     return (
-        <div className="pt-4 mx-0 mx-md-3">
-            <div className='d-flex justify-content-between mb-4'>
+        <div className="mt-4 mx-0 mx-md-3">
+            <div className='d-flex flex-wrap justify-content-between mb-4'>
                 <h1>{tableName}</h1>
 
                 <Button className='col-auto col-md-2' variant="primary" onClick={handleShowAddModal}>
@@ -283,7 +285,7 @@ const Users = () => {
                         </Form.Group>
                         <Form.Group controlId="password">
                             <Form.Label className='mb-1 mt-2'>Пароль</Form.Label>
-                            <Form.Control type={passwordVisible ? 'text' : 'password'} required placeholder="Пустое поле - без изменений"
+                            <Form.Control type={passwordVisible ? 'text' : 'password'} defaultValue="" placeholder="Пустое поле - без изменений"
                             />
                             <Form.Text onClick={togglePasswordVisibility} className='d-block text-right pointer'>
                                 {passwordVisible ? 'Скрыть пароль' : 'Показать пароль'}

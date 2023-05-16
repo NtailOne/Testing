@@ -158,7 +158,31 @@ async function executeSelectSqlQuery(pool, sql, res) {
         });
 
         // Запросы на изменений записей в БД
-        
+        app.put('/users/:id', async (req, res) => {
+            const id = req.params.id;
+            const { email, password, surname, name, patronymic, role_id, course_id, group_id } = req.body;
+            let sql;
+            let values;
+            if (password === "") {
+                sql = `UPDATE users SET email = ?, surname = ?, name = ?, patronymic = ?, role_id = ?, course_id = ?, group_id = ? WHERE id = ?;`;
+                values = [email, surname, name, patronymic, role_id, course_id, group_id, id];
+            } else {
+                const hashedPassword = await bcrypt.hash(password, 10);
+                sql = `UPDATE users SET email = ?, password = ?, surname = ?, name = ?, patronymic = ?, role_id = ?, course_id = ?, group_id = ? WHERE id = ?;`;
+                values = [email, hashedPassword, surname, name, patronymic, role_id, course_id, group_id, id];
+            }
+            try {
+                const [result] = await pool.execute(sql, values);
+                if (result.affectedRows > 0) {
+                    res.sendStatus(204);
+                } else {
+                    res.sendStatus(404);
+                }
+            } catch (error) {
+                console.error(error);
+                res.sendStatus(500);
+            }
+        });
 
         // Запросы на удаление записей из БД
 
