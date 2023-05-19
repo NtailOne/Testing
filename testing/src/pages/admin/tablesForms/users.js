@@ -16,6 +16,8 @@ const Users = () => {
     const [filteredGroups, setFilteredGroups] = useState([]);
     const [roles, setRoles] = useState([]);
     const [selectedRoleId, setSelectedRoleId] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [searchColumn, setSearchColumn] = useState('surname');
 
     const password_pattern = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])[a-zA-Z0-9]{8,}$/;
     let tableName = 'Пользователи';
@@ -41,6 +43,22 @@ const Users = () => {
             setUsersTable(response.data);
         });
     };
+
+    const handleSearch = (event) => {
+        setSearchTerm(event.target.value);
+    };
+
+    const handleColumnSelect = (event) => {
+        setSearchColumn(event.target.value);
+    };
+
+    const filteredUsers = usersTable.filter((user) => {
+        try {
+            user[searchColumn].toLowerCase().includes(searchTerm.toLowerCase())
+        } catch {
+            user[searchColumn].includes(searchTerm)
+        }
+    });
 
     const togglePasswordVisibility = () => {
         setPasswordVisible(!passwordVisible);
@@ -124,11 +142,7 @@ const Users = () => {
 
         if (form.password.value === "" || password_pattern.test(form.password.value)) {
             axios.put(`/users/${selectedUser.id}`, body).then(() => {
-                setUsersTable(
-                    usersTable.map((user) =>
-                        user.id === selectedUser.id ? { ...user, ...body } : user
-                    )
-                );
+                getUsersForTable();
                 setUsers(
                     users.map((user) =>
                         user.id === selectedUser.id ? { ...user, ...body } : user
@@ -136,6 +150,10 @@ const Users = () => {
                 );
                 setShowEditModal(false);
             });
+        } else {
+            alert(`Неверный пароль.
+            \nДлина пароля должна быть не меньше 8 символов.
+            \nПароль должен содержать только латинские символы, а также минимум одну строчную, одну заглавную букву и одну цифру.`);
         }
     };
 
@@ -148,10 +166,26 @@ const Users = () => {
 
     return (
         <div className="mt-4 mx-0 mx-md-3">
-            <div className='d-flex flex-wrap justify-content-between mb-4'>
+            <div className='d-flex flex-wrap justify-content-between mb-4 gap-4'>
                 <h1 className='text-white'>{tableName}</h1>
-
-                <Button className='col-auto col-md-2' variant="primary" onClick={handleShowAddModal}>
+                <div className='d-flex flex-wrap gap-2 col-12 col-md-auto'>
+                    <Form.Select className='w-auto' value={searchColumn} onChange={handleColumnSelect}>
+                        <option value='surname'>Фамилия</option>
+                        <option value='name'>Имя</option>
+                        <option value='patronymic'>Отчество</option>
+                        <option value='email'>Электронная почта</option>
+                        <option value='course_num'>Курс</option>
+                        <option value='group_name'>Группа</option>
+                    </Form.Select>
+                    <Form.Control
+                        className='w-auto'
+                        type='text'
+                        value={searchTerm}
+                        onChange={handleSearch}
+                        placeholder='Поиск по критерию'
+                    />
+                </div>
+                <Button className='col-12 col-md-2' variant="primary" onClick={handleShowAddModal}>
                     Добавить
                 </Button>
             </div>
@@ -169,7 +203,7 @@ const Users = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {usersTable.map((user) => (
+                        {filteredUsers.map((user) => (
                             <tr key={user.id}>
                                 <td>{user.role_name}</td>
                                 <td>{user.surname} {user.name} {user.patronymic}</td>
