@@ -43,11 +43,11 @@ const AdminLoginForm = () => {
         <div className='row justify-content-center mx-0 login admin'>
             <Form className='col-md-6 col-11' onSubmit={handleSubmit}>
                 <Form.Group className='mb-3' controlId='formBasicEmail'>
-                    <Form.Label>Логин</Form.Label>
+                    <Form.Label className='text-white'>Логин</Form.Label>
                     <Form.Control type='login' name='login' onChange={handleInput} placeholder='Введите логин' />
                 </Form.Group>
                 <Form.Group className='mb-3' controlId='formBasicPassword'>
-                    <Form.Label>Пароль</Form.Label>
+                    <Form.Label className='text-white'>Пароль</Form.Label>
                     <Form.Control type='password' name='password' onChange={handleInput} placeholder='Пароль' />
                 </Form.Group>
                 <Button className='col-12 button' variant='primary' type='submit'>Войти</Button>

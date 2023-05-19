@@ -61,12 +61,12 @@ const LoginForm = () => {
     return (
         <Form className='col-md-6 col-11' onSubmit={handleSubmit}>
             <Form.Group className='mb-3' controlId='formBasicEmail'>
-                <Form.Label>Email адрес</Form.Label>
+                <Form.Label className='text-white'>Email адрес</Form.Label>
                 <Form.Control type='email' name='email' onChange={handleInput} placeholder='Введите email' />
                 {errors.email && <span className='text-danger'>{errors.email}</span>}
             </Form.Group>
             <Form.Group className='mb-3' controlId='formBasicPassword'>
-                <Form.Label>Пароль</Form.Label>
+                <Form.Label className='text-white'>Пароль</Form.Label>
                 <Form.Control type='password' name='password' onChange={handleInput} placeholder='Пароль' />
                 {errors.password && <span className='text-danger'>{errors.password}</span>}
             </Form.Group>

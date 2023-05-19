@@ -148,12 +148,13 @@ async function executeSelectSqlQuery(pool, sql, res) {
 
                 const params = [role_id, email, hashedPassword, surname, name, patronymic, course_id || null, group_id || null];
                 const result = await pool.execute(sql, params);
-
-                console.log(`Добавлен пользователь с id ${result[0].insertId}`);
-                res.status(200).send('Пользователь успешно добавлен в базу данных');
+                const insertedUser = { id: result[0].insertId, ...req.body };
+                console.log(`Added user with id ${result[0].insertId}`);
+                const message = 'User has successfully added';
+                res.status(200).send({ message, user: insertedUser });
             } catch (error) {
                 console.error(error);
-                res.status(500).send('Ошибка при добавлении пользователя в базу данных');
+                res.status(500).send('Add user error');
             }
         });
 
@@ -174,18 +175,34 @@ async function executeSelectSqlQuery(pool, sql, res) {
             try {
                 const [result] = await pool.execute(sql, values);
                 if (result.affectedRows > 0) {
-                    res.sendStatus(204);
+                    console.log(`Edited user with id ${id}`);
+                    res.status(200).send('User has successfully edited');
                 } else {
-                    res.sendStatus(404);
+                    res.status(404).send('User is not found');
                 }
             } catch (error) {
                 console.error(error);
-                res.sendStatus(500);
+                res.status(500).send('Edit user error');
             }
         });
 
         // Запросы на удаление записей из БД
-
+        app.delete('/users/:id', async (req, res) => {
+            const id = req.params.id;
+            const sql = 'DELETE FROM users WHERE id = ?';
+            try {
+                const [result] = await pool.execute(sql, [id]);
+                if (result.affectedRows > 0) {
+                    console.log(`Deleted user with id ${id}`);
+                    res.status(204).send('User has successfully deleted');
+                } else {
+                    res.status(404).send('User is not found');
+                }
+            } catch (error) {
+                console.error(error);
+                res.status(500).send('Delete user error');
+            }
+        });
 
         // Обработка неопределенных URL-адресов
         app.use((req, res) => {
@@ -194,7 +211,7 @@ async function executeSelectSqlQuery(pool, sql, res) {
 
         // Слушатель порта
         app.listen(PORT, () => {
-            console.log('Сервер запущен на порту: ', PORT);
+            console.log('Server is working on port: ', PORT);
         });
     } catch (e) {
         // Остановка приложения в случае ошибки подключения к базе данных

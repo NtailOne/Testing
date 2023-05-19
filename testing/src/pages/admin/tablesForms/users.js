@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Modal, Form } from 'react-bootstrap';
 import axios from 'axios';
+import DeleteItemConfirmation from '../../../components/DeleteConfirmation';
 
 const Users = () => {
     const [usersTable, setUsersTable] = useState([]);
@@ -20,9 +21,7 @@ const Users = () => {
     let tableName = 'Пользователи';
 
     useEffect(() => {
-        axios.get(`/users-table`).then((response) => {
-            setUsersTable(response.data);
-        });
+        getUsersForTable();
         axios.get(`/users`).then((response) => {
             setUsers(response.data);
         });
@@ -37,13 +36,19 @@ const Users = () => {
         });
     }, []);
 
+    const getUsersForTable = () => {
+        axios.get(`/users-table`).then((response) => {
+            setUsersTable(response.data);
+        });
+    };
+
     const togglePasswordVisibility = () => {
         setPasswordVisible(!passwordVisible);
     };
 
     const handleRoleChange = (event) => {
         setSelectedRoleId(event.target.value);
-    }
+    };
 
     const handleCourseChange = (event) => {
         setSelectedCourseId(event.target.value);
@@ -72,12 +77,6 @@ const Users = () => {
         setSelectedCourseId(null);
         setShowAddModal(false);
         setShowEditModal(false);
-    }
-
-    const handleDelete = (id) => {
-        axios.delete(`/users/${id}`).then(() => {
-            setUsers(users.filter((user) => user.id !== id));
-        });
     };
 
     const handleAddSubmit = (event) => {
@@ -97,7 +96,8 @@ const Users = () => {
 
         if (password_pattern.test(form.password.value)) {
             axios.post(`/users`, body).then((response) => {
-                setUsers([...users, response.data]);
+                setUsers([...users, response.data.user]);
+                getUsersForTable();
                 setShowAddModal(false);
             });
         } else {
@@ -124,6 +124,11 @@ const Users = () => {
 
         if (form.password.value === "" || password_pattern.test(form.password.value)) {
             axios.put(`/users/${selectedUser.id}`, body).then(() => {
+                setUsersTable(
+                    usersTable.map((user) =>
+                        user.id === selectedUser.id ? { ...user, ...body } : user
+                    )
+                );
                 setUsers(
                     users.map((user) =>
                         user.id === selectedUser.id ? { ...user, ...body } : user
@@ -134,10 +139,17 @@ const Users = () => {
         }
     };
 
+    const handleDelete = (id) => {
+        axios.delete(`/users/${id}`).then(() => {
+            setUsersTable(usersTable.filter((user) => user.id !== id));
+            setUsers(users.filter((user) => user.id !== id));
+        });
+    };
+
     return (
         <div className="mt-4 mx-0 mx-md-3">
             <div className='d-flex flex-wrap justify-content-between mb-4'>
-                <h1>{tableName}</h1>
+                <h1 className='text-white'>{tableName}</h1>
 
                 <Button className='col-auto col-md-2' variant="primary" onClick={handleShowAddModal}>
                     Добавить
@@ -171,12 +183,9 @@ const Users = () => {
                                     >
                                         Редактировать
                                     </Button>{' '}
-                                    <Button
-                                        variant="danger"
-                                        onClick={() => handleDelete(user.id)}
-                                    >
-                                        Удалить
-                                    </Button>
+                                    <DeleteItemConfirmation
+                                        onDelete={() => handleDelete(user.id)}
+                                    />
                                 </td>
                             </tr>
                         ))}
