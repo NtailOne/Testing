@@ -53,11 +53,9 @@ const Users = () => {
     };
 
     const filteredUsers = usersTable.filter((user) => {
-        try {
-            user[searchColumn].toLowerCase().includes(searchTerm.toLowerCase())
-        } catch {
-            user[searchColumn].includes(searchTerm)
-        }
+        const value = user[searchColumn];
+        const term = searchTerm.toLowerCase();
+        return value && value.toString().toLowerCase().includes(term);
     });
 
     const togglePasswordVisibility = () => {
@@ -169,7 +167,7 @@ const Users = () => {
             <div className='d-flex flex-wrap justify-content-between mb-4 gap-4'>
                 <h1 className='text-white'>{tableName}</h1>
                 <div className='d-flex flex-wrap gap-2 col-12 col-md-auto'>
-                    <Form.Select className='w-auto' value={searchColumn} onChange={handleColumnSelect}>
+                    <Form.Select className='search-bar' value={searchColumn} onChange={handleColumnSelect}>
                         <option value='surname'>Фамилия</option>
                         <option value='name'>Имя</option>
                         <option value='patronymic'>Отчество</option>
@@ -178,7 +176,7 @@ const Users = () => {
                         <option value='group_name'>Группа</option>
                     </Form.Select>
                     <Form.Control
-                        className='w-auto'
+                        className='search-bar'
                         type='text'
                         value={searchTerm}
                         onChange={handleSearch}

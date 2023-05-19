@@ -158,6 +158,20 @@ async function executeSelectSqlQuery(pool, sql, res) {
             }
         });
 
+        app.post('/topics', async (req, res) => {
+            const topicName = req.body.topic_name;
+            const sql = 'INSERT INTO topics (topic_name) VALUES (?)';
+            try {
+                const [result] = await connection.execute(sql, [topicName]);
+                const topic = { id: result.insertId, topic_name: topicName };
+                console.log(`Added topic with id ${result.insertId}`);
+                res.status(200).json(topic);
+            } catch (err) {
+                console.error(err);
+                res.status(500).send('Error adding topic');
+            }
+        });
+
         // Запросы на изменений записей в БД
         app.put('/users/:id', async (req, res) => {
             const id = req.params.id;
@@ -186,6 +200,8 @@ async function executeSelectSqlQuery(pool, sql, res) {
             }
         });
 
+
+
         // Запросы на удаление записей из БД
         app.delete('/users/:id', async (req, res) => {
             const id = req.params.id;
@@ -203,6 +219,8 @@ async function executeSelectSqlQuery(pool, sql, res) {
                 res.status(500).send('Delete user error');
             }
         });
+
+
 
         // Обработка неопределенных URL-адресов
         app.use((req, res) => {
