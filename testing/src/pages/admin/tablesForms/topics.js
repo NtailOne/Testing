@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Modal, Form } from 'react-bootstrap';
 import axios from 'axios';
+import DeleteItemConfirmation from '../../../components/DeleteConfirmation';
 
 const Topics = () => {
     const [topics, setTopics] = useState([]);
+    const [questions, setQuestions] = useState([]);
     const [selectedTopic, setSelectedTopic] = useState({});
+    const [showQuestionsModal, setShowQuestionsModal] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -21,6 +24,12 @@ const Topics = () => {
         setSearchTerm(event.target.value);
     };
 
+    const filteredTopics = topics.filter((topic) => {
+        const value = topic.topic_name;
+        const term = searchTerm.toLowerCase();
+        return value.toString().toLowerCase().includes(term);
+    });
+
     const handleShowAddModal = () => {
         setShowAddModal(true);
     };
@@ -28,6 +37,14 @@ const Topics = () => {
     const handleShowEditModal = (topic) => {
         setSelectedTopic(topic);
         setShowEditModal(true);
+    };
+
+    const handleShowQuestionsModal = (topic) => {
+        setSelectedTopic(topic);
+        axios.get(`/questions/${selectedTopic.id}`).then((response) => {
+            setQuestions(response.data);
+        });
+        setShowQuestionsModal(true);
     };
 
     const handleAddSubmit = (event) => {
@@ -61,10 +78,16 @@ const Topics = () => {
             setShowEditModal(false);
         });
     };
-    
+
     const handleDelete = (id) => {
         axios.delete(`/topics/${id}`).then(() => {
             setTopics(topics.filter((topic) => topic.id !== id));
+        });
+    };
+
+    const handleDeleteQuestion = (id) => {
+        axios.delete(`/questions/${id}`).then(() => {
+            setQuestions(questions.filter((question) => question.id !== id));
         });
     };
 
@@ -95,22 +118,25 @@ const Topics = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {topics.map((topic) => (
+                        {filteredTopics.map((topic) => (
                             <tr key={topic.id}>
                                 <td>{topic.topic_name}</td>
                                 <td className='d-flex flex-wrap justify-content-end gap-2'>
+                                    <Button
+                                        variant="secondary"
+                                        onClick={() => handleShowQuestionsModal(topic)}
+                                    >
+                                        Просмотр
+                                    </Button>
                                     <Button
                                         variant="warning"
                                         onClick={() => handleShowEditModal(topic)}
                                     >
                                         Редактировать
-                                    </Button>{' '}
-                                    <Button
-                                        variant="danger"
-                                        onClick={() => handleDelete(topic.id)}
-                                    >
-                                        Удалить
                                     </Button>
+                                    <DeleteItemConfirmation
+                                        onDelete={() => handleDelete(topic.id)}
+                                    />
                                 </td>
                             </tr>
                         ))}
@@ -148,7 +174,7 @@ const Topics = () => {
                     <Modal.Body>
                         <Form.Group controlId="topic_name">
                             <Form.Label className='mb-1 mt-2'>Название</Form.Label>
-                            <Form.Control type="text" required defaultValue={selectedTopic.title} />
+                            <Form.Control type="text" required defaultValue={selectedTopic.topic_name} />
                         </Form.Group>
                     </Modal.Body>
                     <Modal.Footer>
@@ -159,6 +185,36 @@ const Topics = () => {
                             Сохранить изменения
                         </Button>
                     </Modal.Footer>
+                </Form>
+            </Modal>
+
+            <Modal show={showQuestionsModal} onHide={() => setShowQuestionsModal(false)}>
+                <Form>
+                    <Modal.Header closeButton>
+                        <Modal.Title>{selectedTopic.topic_name}</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <Table bordered hover className='bg-white text-black'>
+                            <thead>
+                                <tr>
+                                    <th>Вопрос</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {questions.map((question) => (
+                                    <tr key={question.id}>
+                                        <td>{question.body}</td>
+                                        <td className='d-flex flex-wrap justify-content-end gap-2'>
+                                            <DeleteItemConfirmation
+                                                onDelete={() => handleDeleteQuestion(question.id)}
+                                            />
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </Table>
+                    </Modal.Body>
                 </Form>
             </Modal>
         </div>

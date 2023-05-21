@@ -214,7 +214,7 @@ const Users = () => {
                                         onClick={() => handleShowEditModal(user)}
                                     >
                                         Редактировать
-                                    </Button>{' '}
+                                    </Button>
                                     <DeleteItemConfirmation
                                         onDelete={() => handleDelete(user.id)}
                                     />

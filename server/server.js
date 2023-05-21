@@ -68,7 +68,7 @@ async function executeSelectSqlQuery(pool, sql, res) {
             }
         });
 
-        // Запросы на получение записей БД
+        // Запросы на получение всех записей таблиц БД
         app.get('/users', async (req, res) => {
             const sql = 'SELECT * FROM users';
             await executeSelectSqlQuery(pool, sql, res);
@@ -137,6 +137,19 @@ async function executeSelectSqlQuery(pool, sql, res) {
             await executeSelectSqlQuery(pool, sql, res);
         });
 
+        // Запросы на получение необходимых записей таблиц БД
+        app.get('/questions/:topicId', async (req, res) => {
+            const topicId = req.params.topicId;
+            const sql = 'SELECT * FROM questions WHERE topic_id = ?';
+            try {
+                const [rows] = await pool.execute(sql, [topicId]);
+                res.status(200).json(rows);
+            } catch (err) {
+                console.error(err);
+                res.status(500).send('Error retrieving questions');
+            }
+        });
+
         // Запросы на добавление записей в БД
         app.post('/users', async (req, res) => {
             const { role_id, email, password, surname, name, patronymic, course_id, group_id } = req.body;
@@ -162,7 +175,7 @@ async function executeSelectSqlQuery(pool, sql, res) {
             const topicName = req.body.topic_name;
             const sql = 'INSERT INTO topics (topic_name) VALUES (?)';
             try {
-                const [result] = await connection.execute(sql, [topicName]);
+                const [result] = await pool.execute(sql, [topicName]);
                 const topic = { id: result.insertId, topic_name: topicName };
                 console.log(`Added topic with id ${result.insertId}`);
                 res.status(200).json(topic);
@@ -192,7 +205,7 @@ async function executeSelectSqlQuery(pool, sql, res) {
                     console.log(`Edited user with id ${id}`);
                     res.status(200).send('User has successfully edited');
                 } else {
-                    res.status(404).send('User is not found');
+                    res.status(404).send('User not found');
                 }
             } catch (error) {
                 console.error(error);
@@ -200,7 +213,24 @@ async function executeSelectSqlQuery(pool, sql, res) {
             }
         });
 
-
+        app.put('/topics/:id', async (req, res) => {
+            const id = req.params.id;
+            const topicName = req.body.topic_name;
+            const sql = 'UPDATE topics SET topic_name = ? WHERE id = ?';
+            try {
+                const [result] = await pool.execute(sql, [topicName, id]);
+                if (result.affectedRows > 0) {
+                    console.log(`Updated topic with id ${id}`);
+                    const topic = { id: Number(id), topic_name: topicName };
+                    res.status(200).json(topic);
+                } else {
+                    res.status(404).send('Topic not found');
+                }
+            } catch (err) {
+                console.error(err);
+                res.status(500).send('Error updating topic');
+            }
+        });
 
         // Запросы на удаление записей из БД
         app.delete('/users/:id', async (req, res) => {
@@ -210,9 +240,9 @@ async function executeSelectSqlQuery(pool, sql, res) {
                 const [result] = await pool.execute(sql, [id]);
                 if (result.affectedRows > 0) {
                     console.log(`Deleted user with id ${id}`);
-                    res.status(204).send('User has successfully deleted');
+                    res.status(204).send(`User with id ${id} deleted`);
                 } else {
-                    res.status(404).send('User is not found');
+                    res.status(404).send('User not found');
                 }
             } catch (error) {
                 console.error(error);
@@ -220,7 +250,39 @@ async function executeSelectSqlQuery(pool, sql, res) {
             }
         });
 
+        app.delete('/topics/:id', async (req, res) => {
+            const id = req.params.id;
+            const sql = 'DELETE FROM topics WHERE id = ?';
+            try {
+                const [result] = await pool.execute(sql, [id]);
+                if (result.affectedRows > 0) {
+                    console.log(`Deleted topic with id ${id}`);
+                    res.status(200).send(`Topic with id ${id} deleted`);
+                } else {
+                    res.status(404).send('Topic not found');
+                }
+            } catch (err) {
+                console.error(err);
+                res.status(500).send('Error deleting topic');
+            }
+        });
 
+        app.delete('/questions/:id', async (req, res) => {
+            const id = req.params.id;
+            const sql = 'DELETE FROM questions WHERE id = ?';
+            try {
+                const [result] = await pool.execute(sql, [id]);
+                if (result.affectedRows > 0) {
+                    console.log(`Deleted question with id ${id}`);
+                    res.status(200).send(`Question with id ${id} deleted`);
+                } else {
+                    res.status(404).send('Question not found');
+                }
+            } catch (err) {
+                console.error(err);
+                res.status(500).send('Error deleting question');
+            }
+        });
 
         // Обработка неопределенных URL-адресов
         app.use((req, res) => {

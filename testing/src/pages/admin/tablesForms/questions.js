@@ -97,7 +97,7 @@ const Questions = () => {
                                         onClick={() => handleShowEditModal(item)}
                                     >
                                         Редактировать
-                                    </Button>{' '}
+                                    </Button>
                                     <Button
                                         variant="danger"
                                         onClick={() => handleDelete(item.id)}
