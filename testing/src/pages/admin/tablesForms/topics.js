@@ -41,7 +41,7 @@ const Topics = () => {
 
     const handleShowQuestionsModal = (topic) => {
         setSelectedTopic(topic);
-        axios.get(`/questions/${selectedTopic.id}`).then((response) => {
+        axios.get(`/questions/${topic.id}`).then((response) => {
             setQuestions(response.data);
         });
         setShowQuestionsModal(true);

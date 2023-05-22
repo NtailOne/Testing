@@ -140,12 +140,12 @@ const Users = () => {
 
         if (form.password.value === "" || password_pattern.test(form.password.value)) {
             axios.put(`/users/${selectedUser.id}`, body).then(() => {
-                getUsersForTable();
                 setUsers(
                     users.map((user) =>
                         user.id === selectedUser.id ? { ...user, ...body } : user
                     )
                 );
+                getUsersForTable();
                 setShowEditModal(false);
             });
         } else {

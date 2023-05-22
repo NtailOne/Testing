@@ -185,6 +185,20 @@ async function executeSelectSqlQuery(pool, sql, res) {
             }
         });
 
+        app.post('/groups', async (req, res) => {
+            const { group_name, course_id } = req.body;
+            const sql = 'INSERT INTO courses_groups (group_name, course_id) VALUES (?, ?)';
+            try {
+                const [result] = await pool.execute(sql, [group_name, course_id]);
+                const group = { id: result.insertId, group_name: group_name, course_id: course_id };
+                console.log(`Added group with id ${result.insertId}`);
+                res.status(200).json(group);
+            } catch (err) {
+                console.error(err);
+                res.status(500).send('Error adding group');
+            }
+        });
+
         // Запросы на изменений записей в БД
         app.put('/users/:id', async (req, res) => {
             const id = req.params.id;
@@ -232,6 +246,25 @@ async function executeSelectSqlQuery(pool, sql, res) {
             }
         });
 
+        app.put('/groups/:id', async (req, res) => {
+            const id = req.params.id;
+            const { group_name, course_id } = req.body;
+            const sql = 'UPDATE courses_groups SET group_name = ?, course_id = ? WHERE id = ?';
+            try {
+                const [result] = await pool.execute(sql, [group_name, course_id, id]);
+                if (result.affectedRows > 0) {
+                    console.log(`Updated group with id ${id}`);
+                    const group = { id: Number(id), group_name: group_name, course_id: course_id };
+                    res.status(200).json(group);
+                } else {
+                    res.status(404).send('Group not found');
+                }
+            } catch (err) {
+                console.error(err);
+                res.status(500).send('Error updating group');
+            }
+        });
+
         // Запросы на удаление записей из БД
         app.delete('/users/:id', async (req, res) => {
             const id = req.params.id;
@@ -264,6 +297,23 @@ async function executeSelectSqlQuery(pool, sql, res) {
             } catch (err) {
                 console.error(err);
                 res.status(500).send('Error deleting topic');
+            }
+        });
+
+        app.delete('/groups/:id', async (req, res) => {
+            const id = req.params.id;
+            const sql = 'DELETE FROM courses_groups WHERE id = ?';
+            try {
+                const [result] = await pool.execute(sql, [id]);
+                if (result.affectedRows > 0) {
+                    console.log(`Deleted group with id ${id}`);
+                    res.status(200).send(`Group with id ${id} deleted`);
+                } else {
+                    res.status(404).send('Group not found');
+                }
+            } catch (err) {
+                console.error(err);
+                res.status(500).send('Error deleting group');
             }
         });
 
