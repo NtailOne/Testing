@@ -101,7 +101,7 @@ const Topics = () => {
                         type='text'
                         value={searchTerm}
                         onChange={handleSearch}
-                        placeholder='Поиск по критерию'
+                        placeholder='Поиск'
                     />
                 </div>
                 <Button className='col-12 col-md-2' variant="primary" onClick={handleShowAddModal}>

@@ -1,33 +1,51 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Modal, Form } from 'react-bootstrap';
+import { Typeahead } from 'react-bootstrap-typeahead'
 import axios from 'axios';
+import DeleteItemConfirmation from '../../../components/DeleteConfirmation';
 
 const Questions = () => {
-    const [items, setItems] = useState([]);
-    const [selectedItem, setSelectedItem] = useState({});
+    const [questions, setQuestions] = useState([]);
+    const [selectedQuestion, setSelectedQuestion] = useState({});
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [options, setOptions] = useState([]);
+    const [selectedOption, setSelectedOption] = useState(null);
+    const [answersCount, setAnswersCount] = useState(1);
 
     let tableName = 'Вопросы';
 
     useEffect(() => {
         axios.get(`/questions`).then((response) => {
-            setItems(response.data);
+            setQuestions(response.data);
         });
     }, []);
 
+    const handleSearch = (event) => {
+        setSearchTerm(event.target.value);
+    };
+
+    const handleChange = (selectedOption) => {
+        console.log(selectedOption[0].value);
+        setSelectedOption(selectedOption[0].value);
+    };
+
     const handleShowAddModal = () => {
+        axios.get(`/topics`).then((response) => {
+            setOptions(response.data.map(topic => ({ value: topic.id, label: topic.topic_name })));
+        });
         setShowAddModal(true);
     };
 
-    const handleShowEditModal = (item) => {
-        setSelectedItem(item);
+    const handleShowEditModal = (question) => {
+        setSelectedQuestion(question);
         setShowEditModal(true);
     };
 
     const handleDelete = (id) => {
         axios.delete(`/questions/${id}`).then(() => {
-            setItems(items.filter((item) => item.id !== id));
+            setQuestions(questions.filter((question) => question.id !== id));
         });
     };
 
@@ -41,7 +59,7 @@ const Questions = () => {
         };
 
         axios.post(`/questions`, body).then((response) => {
-            setItems([...items, response.data]);
+            setQuestions([...questions, response.data]);
             setShowAddModal(false);
         });
     };
@@ -55,10 +73,10 @@ const Questions = () => {
             description: form.description.value,
         };
 
-        axios.put(`/questions/${selectedItem.id}`, body).then(() => {
-            setItems(
-                items.map((item) =>
-                    item.id === selectedItem.id ? { ...item, ...body } : item
+        axios.put(`/questions/${selectedQuestion.id}`, body).then(() => {
+            setQuestions(
+                questions.map((question) =>
+                    question.id === selectedQuestion.id ? { ...question, ...body } : question
                 )
             );
             setShowEditModal(false);
@@ -66,11 +84,19 @@ const Questions = () => {
     };
 
     return (
-        <div className="container pt-4">
-            <div className='d-flex flex-wrap justify-content-between mb-4'>
+        <div className="mt-4 mx-0 mx-md-3">
+            <div className='d-flex flex-wrap justify-content-between mb-4 gap-4'>
                 <h1 className='text-white'>{tableName}</h1>
-
-                <Button className='col-2' variant="primary" onClick={handleShowAddModal}>
+                <div className='d-flex flex-wrap gap-2 col-12 col-md-auto'>
+                    <Form.Control
+                        className='search-bar'
+                        type='text'
+                        value={searchTerm}
+                        onChange={handleSearch}
+                        placeholder='Поиск'
+                    />
+                </div>
+                <Button className='col-12 col-md-2' variant="primary" onClick={handleShowAddModal}>
                     Добавить
                 </Button>
             </div>
@@ -86,24 +112,21 @@ const Questions = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {items.map((item) => (
-                            <tr key={item.id}>
-                                <td>{item.topic_name}</td>
-                                <td>{item.body}</td>
-                                <td>{item.description}</td>
+                        {questions.map((question) => (
+                            <tr key={question.id}>
+                                <td>{question.topic_name}</td>
+                                <td>{question.body}</td>
+                                <td>{question.description}</td>
                                 <td className='d-flex flex-wrap justify-content-end gap-2'>
                                     <Button
                                         variant="warning"
-                                        onClick={() => handleShowEditModal(item)}
+                                        onClick={() => handleShowEditModal(question)}
                                     >
                                         Редактировать
                                     </Button>
-                                    <Button
-                                        variant="danger"
-                                        onClick={() => handleDelete(item.id)}
-                                    >
-                                        Удалить
-                                    </Button>
+                                    <DeleteItemConfirmation
+                                        onDelete={() => handleDelete(question.id)}
+                                    />
                                 </td>
                             </tr>
                         ))}
@@ -117,17 +140,24 @@ const Questions = () => {
                         <Modal.Title>Добавить элемент</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
-                        <Form.Group controlId="title">
-                            <Form.Label>Название</Form.Label>
-                            <Form.Control type="text" placeholder="Введите название" />
-                        </Form.Group>
-                        <Form.Group controlId="description">
-                            <Form.Label>Описание</Form.Label>
-                            <Form.Control
-                                as="textarea"
-                                rows={3}
-                                placeholder="Введите описание"
+                        <Form.Group controlId="topic">
+                            <Form.Label className='mb-1 mt-2'>Тема</Form.Label>
+                            <Typeahead
+                                id="typeahead-topic"
+                                options={options}
+                                defaultSelected={options.filter(option => option.value === selectedOption)}
+                                onChange={handleChange}
+                                labelKey="label"
+                                placeholder="Выберите тему"
                             />
+                        </Form.Group>
+                        <Form.Group controlId="question">
+                            <Form.Label className='mb-1 mt-2'>Вопрос</Form.Label>
+                            <Form.Control type="text" required placeholder="Введите вопрос" />
+                        </Form.Group>
+                        <Form.Group controlId="question">
+                            <Form.Label className='mb-1 mt-2'>Ответы</Form.Label>
+                            <Form.Control type="text" required placeholder="Введите ответ" />
                         </Form.Group>
                     </Modal.Body>
                     <Modal.Footer>
@@ -148,18 +178,18 @@ const Questions = () => {
                     </Modal.Header>
                     <Modal.Body>
                         <Form.Group controlId="title">
-                            <Form.Label>Название</Form.Label>
+                            <Form.Label className='mb-1 mt-2'>Название</Form.Label>
                             <Form.Control
                                 type="text"
-                                defaultValue={selectedItem.title}
+                                defaultValue={selectedQuestion.title}
                             />
                         </Form.Group>
                         <Form.Group controlId="description">
-                            <Form.Label>Описание</Form.Label>
+                            <Form.Label className='mb-1 mt-2'>Описание</Form.Label>
                             <Form.Control
                                 as="textarea"
                                 rows={3}
-                                defaultValue={selectedItem.description}
+                                defaultValue={selectedQuestion.description}
                             />
                         </Form.Group>
                     </Modal.Body>

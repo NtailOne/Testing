@@ -67,8 +67,8 @@ const Groups = () => {
 
         const form = event.target;
         const body = {
-            title: form.title.value,
-            description: form.description.value,
+            group_name: form.group_name.value,
+            course_id: form.course.value
         };
 
         axios.post(`/groups`, body).then((response) => {
@@ -83,8 +83,8 @@ const Groups = () => {
 
         const form = event.target;
         const body = {
-            title: form.title.value,
-            description: form.description.value,
+            group_name: form.group_name.value,
+            course_id: form.course.value
         };
 
         axios.put(`/groups/${selectedGroup.id}`, body).then(() => {
@@ -106,8 +106,8 @@ const Groups = () => {
     };
 
     return (
-        <div className='container pt-4'>
-            <div className='d-flex flex-wrap justify-content-between mb-4'>
+        <div className="mt-4 mx-0 mx-md-3">
+            <div className='d-flex flex-wrap justify-content-between mb-4 gap-4'>
                 <h1 className='text-white'>{tableName}</h1>
                 <div className='d-flex flex-wrap gap-2 col-12 col-md-auto'>
                     <Form.Control
@@ -115,10 +115,10 @@ const Groups = () => {
                         type='text'
                         value={searchTerm}
                         onChange={handleSearch}
-                        placeholder='Поиск по критерию'
+                        placeholder='Поиск'
                     />
                 </div>
-                <Button className='col-2' variant='primary' onClick={handleShowAddModal}>
+                <Button className='col-12 col-md-2' variant="primary" onClick={handleShowAddModal}>
                     Добавить
                 </Button>
             </div>
@@ -164,7 +164,7 @@ const Groups = () => {
                             <Form.Label className='mb-1 mt-2'>Группа</Form.Label>
                             <Form.Control type="text" required placeholder="Введите название группы" />
                         </Form.Group>
-                        <Form.Group controlId="course_id">
+                        <Form.Group controlId="course">
                             <Form.Label className='mb-1 mt-2'>Курс</Form.Label>
                             <Form.Control as="select" className='pointer' required value={selectedCourseId || ""} onChange={handleCourseChange}>
                                 <option disabled value="">

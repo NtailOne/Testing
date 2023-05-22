@@ -80,6 +80,13 @@
     background-position: center center;
 }
 
+.purple-chalk {
+    background-image: url('./images/purple-chalk.png');
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center center;
+}
+
 .black-chalk {
     background-image: url('./images/red-chalk.png');
     background-repeat: no-repeat;

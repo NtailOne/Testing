@@ -7,6 +7,7 @@ const Tests = () => {
     const [selectedItem, setSelectedItem] = useState({});
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
 
     let tableName = 'Тесты';
 
@@ -15,6 +16,10 @@ const Tests = () => {
             setItems(response.data);
         });
     }, []);
+
+    const handleSearch = (event) => {
+        setSearchTerm(event.target.value);
+    };
 
     const handleShowAddModal = () => {
         setShowAddModal(true);
@@ -66,11 +71,19 @@ const Tests = () => {
     };
 
     return (
-        <div className="container pt-4">
-            <div className='d-flex flex-wrap justify-content-between mb-4'>
+        <div className="mt-4 mx-0 mx-md-3">
+            <div className='d-flex flex-wrap justify-content-between mb-4 gap-4'>
                 <h1 className='text-white'>{tableName}</h1>
-
-                <Button className='col-2' variant="primary" onClick={handleShowAddModal}>
+                <div className='d-flex flex-wrap gap-2 col-12 col-md-auto'>
+                    <Form.Control
+                        className='search-bar'
+                        type='text'
+                        value={searchTerm}
+                        onChange={handleSearch}
+                        placeholder='Поиск'
+                    />
+                </div>
+                <Button className='col-12 col-md-2' variant="primary" onClick={handleShowAddModal}>
                     Добавить
                 </Button>
             </div>
@@ -122,11 +135,11 @@ const Tests = () => {
                     </Modal.Header>
                     <Modal.Body>
                         <Form.Group controlId="title">
-                            <Form.Label>Название</Form.Label>
+                            <Form.Label className='mb-1 mt-2'>Название</Form.Label>
                             <Form.Control type="text" placeholder="Введите название" />
                         </Form.Group>
                         <Form.Group controlId="description">
-                            <Form.Label>Описание</Form.Label>
+                            <Form.Label className='mb-1 mt-2'>Описание</Form.Label>
                             <Form.Control
                                 as="textarea"
                                 rows={3}
@@ -152,14 +165,14 @@ const Tests = () => {
                     </Modal.Header>
                     <Modal.Body>
                         <Form.Group controlId="title">
-                            <Form.Label>Название</Form.Label>
+                            <Form.Label className='mb-1 mt-2'>Название</Form.Label>
                             <Form.Control
                                 type="text"
                                 defaultValue={selectedItem.title}
                             />
                         </Form.Group>
                         <Form.Group controlId="description">
-                            <Form.Label>Описание</Form.Label>
+                            <Form.Label className='mb-1 mt-2'>Описание</Form.Label>
                             <Form.Control
                                 as="textarea"
                                 rows={3}

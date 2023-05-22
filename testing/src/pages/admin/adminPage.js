@@ -7,6 +7,7 @@ import Groups from './tablesForms/groups';
 import Topics from './tablesForms/topics';
 import Questions from './tablesForms/questions';
 import Tests from './tablesForms/tests';
+// import Statistics from './tablesForms/statistics';
 
 const AdminPage = () => {
     const { setAdminLogged } = useContext(Context);
@@ -49,7 +50,10 @@ const AdminPage = () => {
         selectedComponent = <Questions />;
     } else if (selectedType === 'tests') {
         selectedComponent = <Tests />;
-    }
+    } 
+    // else if (selectedType === 'statistics') {
+    //     selectedComponent = <Statistics />;
+    // }
 
     return (
         <div>
@@ -66,6 +70,7 @@ const AdminPage = () => {
                                 <Nav.Link className={`yellow-chalk px-0 rounded ${selectedType === 'topics' ? 'active' : ''}`} onClick={() => setSelectedType('topics')}>Темы</Nav.Link>
                                 <Nav.Link className={`green-chalk px-0 rounded ${selectedType === 'questions' ? 'active' : ''}`} onClick={() => setSelectedType('questions')}>Вопросы</Nav.Link>
                                 <Nav.Link className={`blue-chalk px-0 rounded ${selectedType === 'tests' ? 'active' : ''}`} onClick={() => setSelectedType('tests')}>Тесты</Nav.Link>
+                                <Nav.Link className={`purple-chalk px-0 rounded ${selectedType === 'statistics' ? 'active' : ''}`} onClick={() => setSelectedType('statistics')}>Статистика</Nav.Link>
                                 <Nav.Link className='black-chalk px-0 rounded mt-4' onClick={handleLogout}>Выйти</Nav.Link>
                             </Nav>
                         </Navbar>
