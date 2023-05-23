@@ -247,12 +247,13 @@ const Questions = () => {
                             <thead>
                                 <tr>
                                     <th>Ответ</th>
+                                    <th>Правильный</th>
                                     <th>Действия</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {newAnswers.map((answer) => (
-                                    <tr key={answer.num}>
+                                    <tr key={answer.num} className="align-middle">
                                         <td>
                                             <Form.Control
                                                 type="text"
@@ -260,6 +261,11 @@ const Questions = () => {
                                                 value={answer.answer_body}
                                                 onChange={(event) => handleNewAnswerChange(event, answer.num)}
                                             />
+                                        </td>
+                                        <td>
+                                            <Form.Group controlId="correctness" className='d-flex justify-content-center'>
+                                                <Form.Check type="checkbox"/>
+                                            </Form.Group>
                                         </td>
                                         <td>
                                             <DeleteItemConfirmation
