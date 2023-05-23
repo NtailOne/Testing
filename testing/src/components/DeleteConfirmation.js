@@ -16,7 +16,7 @@ const DeleteItemConfirmation = (props) => {
             <Button variant="danger" onClick={handleShow}>
                 Удалить
             </Button>
-            <Modal show={show} onHide={handleClose}>
+            <Modal show={show} onHide={handleClose} className="modal-stack">
                 <Modal.Header closeButton>
                     <Modal.Title>Подтверждение удаления</Modal.Title>
                 </Modal.Header>

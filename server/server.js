@@ -99,6 +99,11 @@ async function executeSelectSqlQuery(pool, sql, res) {
             await executeSelectSqlQuery(pool, sql, res);
         });
 
+        app.get('/answers', async (req, res) => {
+            const sql = 'SELECT * FROM answers';
+            await executeSelectSqlQuery(pool, sql, res);
+        });
+
         app.get('/tests', async (req, res) => {
             const sql = 'SELECT * FROM tests';
             await executeSelectSqlQuery(pool, sql, res);
@@ -122,7 +127,7 @@ async function executeSelectSqlQuery(pool, sql, res) {
         });
 
         app.get('/questions-table', async (req, res) => {
-            const sql = `SELECT questions.id, topics.topic_name, questions.body
+            const sql = `SELECT questions.id, topics.topic_name, questions.question_body
                 FROM questions
                 JOIN topics ON questions.topic_id = topics.id;`;
             await executeSelectSqlQuery(pool, sql, res);

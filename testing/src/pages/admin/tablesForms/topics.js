@@ -43,8 +43,8 @@ const Topics = () => {
         setSelectedTopic(topic);
         axios.get(`/questions/${topic.id}`).then((response) => {
             setQuestions(response.data);
+            setShowQuestionsModal(true);
         });
-        setShowQuestionsModal(true);
     };
 
     const handleAddSubmit = (event) => {
@@ -57,8 +57,8 @@ const Topics = () => {
 
         axios.post(`/topics`, body).then((response) => {
             setTopics([...topics, response.data]);
-            setShowAddModal(false);
         });
+        setShowAddModal(false);
     };
 
     const handleEditSubmit = (event) => {
@@ -204,7 +204,7 @@ const Topics = () => {
                             <tbody>
                                 {questions.map((question) => (
                                     <tr key={question.id}>
-                                        <td>{question.body}</td>
+                                        <td>{question.question_body}</td>
                                         <td className='d-flex flex-wrap justify-content-end gap-2'>
                                             <DeleteItemConfirmation
                                                 onDelete={() => handleDeleteQuestion(question.id)}
