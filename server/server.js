@@ -195,12 +195,40 @@ async function executeSelectSqlQuery(pool, sql, res) {
             const sql = 'INSERT INTO courses_groups (group_name, course_id) VALUES (?, ?)';
             try {
                 const [result] = await pool.execute(sql, [group_name, course_id]);
-                const group = { id: result.insertId, group_name: group_name, course_id: course_id };
+                const group = { id: result.insertId, group_name, course_id };
                 console.log(`Added group with id ${result.insertId}`);
                 res.status(200).json(group);
             } catch (err) {
                 console.error(err);
                 res.status(500).send('Error adding group');
+            }
+        });
+
+        app.post('/questions', async (req, res) => {
+            const { topic_id, question_body } = req.body;
+            const sql = 'INSERT INTO questions (topic_id, question_body) VALUES (?, ?)';
+            try {
+                const [result] = await pool.execute(sql, [topic_id, question_body]);
+                const question = { id: result.insertId, topic_id, question_body };
+                console.log(`Added question with id ${result.insertId}`);
+                res.status(200).json(question);
+            } catch (err) {
+                console.error(err);
+                res.status(500).send('Error adding question');
+            }
+        });
+
+        app.post('/answers', async (req, res) => {
+            const { question_id, answer_body, correctness } = req.body;
+            const sql = 'INSERT INTO answers (question_id, answer_body, correctness) VALUES (?, ?, ?)';
+            try {
+                const [result] = await pool.execute(sql, [question_id, answer_body, correctness]);
+                const answer = { id: result.insertId, question_id, answer_body, correctness };
+                console.log(`Added answer with id ${result.insertId}`);
+                res.status(200).json(answer);
+            } catch (err) {
+                console.error(err);
+                res.status(500).send('Error adding answer');
             }
         });
 
@@ -240,7 +268,7 @@ async function executeSelectSqlQuery(pool, sql, res) {
                 const [result] = await pool.execute(sql, [topicName, id]);
                 if (result.affectedRows > 0) {
                     console.log(`Updated topic with id ${id}`);
-                    const topic = { id: Number(id), topic_name: topicName };
+                    const topic = { id: Number(id), topic_name };
                     res.status(200).json(topic);
                 } else {
                     res.status(404).send('Topic not found');
@@ -259,7 +287,7 @@ async function executeSelectSqlQuery(pool, sql, res) {
                 const [result] = await pool.execute(sql, [group_name, course_id, id]);
                 if (result.affectedRows > 0) {
                     console.log(`Updated group with id ${id}`);
-                    const group = { id: Number(id), group_name: group_name, course_id: course_id };
+                    const group = { id: Number(id), group_name, course_id };
                     res.status(200).json(group);
                 } else {
                     res.status(404).send('Group not found');

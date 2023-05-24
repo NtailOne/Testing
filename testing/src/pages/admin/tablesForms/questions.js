@@ -13,7 +13,7 @@ const Questions = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [searchColumn, setSearchColumn] = useState('question_body');
     const [options, setOptions] = useState([]);
-    const [selectedOption, setSelectedOption] = useState(null);
+    const [selectedOption, setSelectedOption] = useState();
     const [answers, setAnswers] = useState([]);
     const [newAnswerId, setNewAnswerId] = useState(-1);
     const [modalAnswers, setModalAnswers] = useState([]);
@@ -64,7 +64,7 @@ const Questions = () => {
         setModalAnswers(
             modalAnswers.map((answer) =>
                 answer.id === answerId
-                    ? { ...answer, [property]: event.target.value }
+                    ? { ...answer, [property]: property === 'correctness' ? event.target.checked : event.target.value }
                     : answer)
         );
     };
@@ -89,8 +89,16 @@ const Questions = () => {
         setShowAddModal(true);
     };
 
-    const handleShowEditModal = (question) => {
-        setShowEditModal(true);
+    const handleShowEditModal = (questionsFromTable) => {
+        const currQuestion = questions.find(question => questionsFromTable.id == question.id);
+        if (currQuestion !== undefined) {
+            setSelectedQuestion(currQuestion);
+            setModalAnswers(answers.filter(answer => answer.question_id == currQuestion.id));
+            setSelectedOption(options.filter(option => option.value === currQuestion.topic_id));
+            setShowEditModal(true);
+        } else {
+            console.error(`User with id ${questionsFromTable.id} not found`);
+        }
     };
 
     const handleAddSubmit = (event) => {
@@ -107,18 +115,34 @@ const Questions = () => {
             return;
         }
 
+        const countTrue = modalAnswers.filter(answer => answer.correctness === true).length;
+        const countFalse = modalAnswers.length - countTrue;
+
+        const updatedAnswers = modalAnswers.map(answer => {
+            let value = answer.correctness === true ? 1 / countTrue : -1 / countFalse;
+            return { ...answer, correctness: value };
+        });
+
         const form = event.target;
         const body = {
-            topic_id: form.topic.value,
-            question_body: form.question_body.value,
+            topic_id: selectedOption,
+            question_body: form.question.value
         };
 
         axios.post(`/questions`, body).then((response) => {
             setQuestions([...questions, response.data]);
-            modalAnswers.forEach(answer => {
-                axios.post(`/answers`, answer).then((response) => {
-                    setAnswers([...answers, response.data]);
-                });
+            const question_id = response.data.id;
+            Promise.all(
+                updatedAnswers.map((answer) => {
+                    return axios.post(`/answers`, { ...answer, question_id });
+                })
+            ).then((responses) => {
+                const newAnswers = responses.map((response) => response.data);
+                setAnswers((prevState) => [...prevState, ...newAnswers]);
+            });
+            handleModalCancel();
+            axios.get(`/questions-table`).then((response) => {
+                setQuestionsTable(response.data);
             });
             setShowAddModal(false);
         });
@@ -130,7 +154,7 @@ const Questions = () => {
         const form = event.target;
         const body = {
             topic_id: form.topic.value,
-            question_body: form.question_body.value,
+            question_body: form.question.value,
         };
 
         axios.put(`/questions/${selectedQuestion.id}`, body).then(() => {
@@ -153,6 +177,9 @@ const Questions = () => {
                         );
                     });
                 }
+            });
+            axios.get(`/questions-table`).then((response) => {
+                setQuestionsTable(response.data);
             });
             setShowEditModal(false);
         });
@@ -206,7 +233,7 @@ const Questions = () => {
                                         {answers.filter((answer) => (
                                             question.id === answer.question_id
                                         )).map((answer) => (
-                                            <li key={answer.id} className={answer.correctness ? 'correct-answer' : ''}>{answer.answer_body}</li>
+                                            <li key={answer.id} className={answer.correctness > 0 ? 'correct-answer' : ''}>{answer.answer_body}</li>
                                         ))}
                                     </ul>
                                 </td>
@@ -256,7 +283,7 @@ const Questions = () => {
                                 Добавить ответ
                             </Button>
                         </div>
-                        <div className='table-responsive'>
+                        <div className={`table-responsive ${modalAnswers.length === 0 ? 'd-none' : ''}`}>
                             <Table>
                                 <thead>
                                     <tr>
@@ -312,28 +339,74 @@ const Questions = () => {
                         <Modal.Title>Редактировать элемент</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
-                        <Form.Group controlId="title">
-                            <Form.Label className='mb-1 mt-2'>Название</Form.Label>
-                            <Form.Control
-                                type="text"
-                                defaultValue={selectedQuestion.title}
+                        <Form.Group controlId="topic">
+                            <Form.Label className='mb-1 mt-2'>Тема</Form.Label>
+                            <Typeahead
+                                id="typeahead-topic"
+                                options={options}
+                                defaultSelected={options.filter(option => option.value === selectedOption)}
+                                onChange={handleChange}
+                                labelKey="label"
+                                placeholder="Выберите тему"
+                                allowNew={false}
+                                required
                             />
                         </Form.Group>
-                        <Form.Group controlId="description">
-                            <Form.Label className='mb-1 mt-2'>Описание</Form.Label>
-                            <Form.Control
-                                as="textarea"
-                                rows={3}
-                                defaultValue={selectedQuestion.description}
-                            />
+                        <Form.Group controlId="question">
+                            <Form.Label className='mb-1 mt-2'>Вопрос</Form.Label>
+                            <Form.Control as="textarea" rows={3} required defaultValue={selectedQuestion.question_body} placeholder="Введите вопрос" />
                         </Form.Group>
+                        <div className='d-flex flex-wrap mb-1 mt-3 justify-content-between'>
+                            <Form.Label className='mb-1 mt-2'>Ответы:</Form.Label>
+                            <Button variant="primary" onClick={createModalAnswer}>
+                                Добавить ответ
+                            </Button>
+                        </div>
+                        <div className={`table-responsive ${modalAnswers.length === 0 ? 'd-none' : ''}`}>
+                            <Table>
+                                <thead>
+                                    <tr>
+                                        <th>Ответ</th>
+                                        <th>Правильный</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {modalAnswers.map((answer) => (
+                                        <tr key={answer.id} className="align-middle">
+                                            <td>
+                                                <Form.Group controlId={`answer${answer.id}`} className='d-flex justify-content-center'>
+                                                    <Form.Control
+                                                        as="textarea"
+                                                        rows={1}
+                                                        placeholder="Введите текст ответа"
+                                                        value={answer.answer_body}
+                                                        onChange={(event) => handleModalAnswerChange(event, answer.id, 'answer_body')}
+                                                    />
+                                                </Form.Group>
+                                            </td>
+                                            <td>
+                                                <Form.Group controlId={`correctness${answer.id}`} className='d-flex justify-content-center'>
+                                                    <Form.Check type="checkbox" onChange={(event) => handleModalAnswerChange(event, answer.id, 'correctness')} />
+                                                </Form.Group>
+                                            </td>
+                                            <td>
+                                                <DeleteItemConfirmation
+                                                    onDelete={() => handleDeleteModalAnswer(answer.id)}
+                                                />
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </Table>
+                        </div>
                     </Modal.Body>
                     <Modal.Footer>
                         <Button variant="secondary" onClick={handleModalCancel}>
                             Отмена
                         </Button>
                         <Button variant="primary" type="submit">
-                            Сохранить изменения
+                            Добавить
                         </Button>
                     </Modal.Footer>
                 </Form>
