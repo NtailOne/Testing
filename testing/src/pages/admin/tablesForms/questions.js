@@ -15,8 +15,8 @@ const Questions = () => {
     const [options, setOptions] = useState([]);
     const [selectedOption, setSelectedOption] = useState(null);
     const [answers, setAnswers] = useState([]);
-    const [newAnswers, setNewAnswers] = useState([]);
-    const [answersCount, setAnswersCount] = useState(1);
+    const [newAnswerId, setNewAnswerId] = useState(-1);
+    const [modalAnswers, setModalAnswers] = useState([]);
 
     let tableName = 'Вопросы';
 
@@ -52,35 +52,32 @@ const Questions = () => {
         } else setSelectedOption(null);
     };
 
-    const createNewAnswer = () => {
-        const newAnswer = {
-            num: answersCount,
-            answer_body: '',
-            question_id: null
+    const createModalAnswer = () => {
+        const modalAnswer = {
+            id: newAnswerId,
         };
-        setNewAnswers([...newAnswers, newAnswer]);
-        setAnswersCount(prev => prev + 1);
+        setModalAnswers([...modalAnswers, modalAnswer]);
+        setNewAnswerId(prev => prev - 1);
     };
 
-    const handleNewAnswerChange = (event, answerNum) => {
-        setNewAnswers(
-            newAnswers.map((a) =>
-                a.num === answerNum
-                    ? { ...a, answer_body: event.target.value }
-                    : a
-            )
+    const handleModalAnswerChange = (event, answerId, property) => {
+        setModalAnswers(
+            modalAnswers.map((answer) =>
+                answer.id === answerId
+                    ? { ...answer, [property]: event.target.value }
+                    : answer)
         );
     };
 
-    const handleDeleteNewAnswer = (answerNum) => {
-        setNewAnswers(newAnswers.filter((newAnswer) => newAnswer.num !== answerNum));
+    const handleDeleteModalAnswer = (answerId) => {
+        setModalAnswers(modalAnswers.filter((modalAnswer) => modalAnswer.id !== answerId));
     };
 
     const handleModalCancel = () => {
         setSelectedQuestion({});
         setSelectedOption(null);
-        setAnswersCount(1);
-        setNewAnswers([]);
+        setNewAnswerId(-1);
+        setModalAnswers([]);
         setShowAddModal(false);
         setShowEditModal(false);
     };
@@ -93,10 +90,6 @@ const Questions = () => {
     };
 
     const handleShowEditModal = (question) => {
-        axios.get(`/questions`).then((response) => {
-            setQuestions(response.data);
-        });
-        setSelectedQuestion(question);
         setShowEditModal(true);
     };
 
@@ -106,10 +99,10 @@ const Questions = () => {
         if (selectedOption === null) {
             alert('Выберите тему')
             return;
-        } else if (answersCount === 2) {
+        } else if (modalAnswers.length === 1) {
             alert('У тестового вопроса не может быть один ответ')
             return;
-        } else if (answersCount === 1) {
+        } else if (modalAnswers.length === 0) {
             alert('Вы не добавили ни одного ответа')
             return;
         }
@@ -122,6 +115,11 @@ const Questions = () => {
 
         axios.post(`/questions`, body).then((response) => {
             setQuestions([...questions, response.data]);
+            modalAnswers.forEach(answer => {
+                axios.post(`/answers`, answer).then((response) => {
+                    setAnswers([...answers, response.data]);
+                });
+            });
             setShowAddModal(false);
         });
     };
@@ -141,6 +139,21 @@ const Questions = () => {
                     question.id === selectedQuestion.id ? { ...question, ...body } : question
                 )
             );
+            modalAnswers.forEach(answer => {
+                if (answer.id < 0) {
+                    axios.post(`/answers`, answer).then((response) => {
+                        setAnswers([...answers, response.data]);
+                    });
+                } else if (answer.id >= 0) {
+                    axios.put(`/answers/${answer.id}`, answer).then(() => {
+                        setAnswers(
+                            answers.map((a) =>
+                                a.id === answer.id ? { ...a, ...answer } : answer
+                            )
+                        );
+                    });
+                }
+            });
             setShowEditModal(false);
         });
     };
@@ -239,43 +252,48 @@ const Questions = () => {
                         </Form.Group>
                         <div className='d-flex flex-wrap mb-1 mt-3 justify-content-between'>
                             <Form.Label className='mb-1 mt-2'>Ответы:</Form.Label>
-                            <Button variant="primary" onClick={createNewAnswer}>
+                            <Button variant="primary" onClick={createModalAnswer}>
                                 Добавить ответ
                             </Button>
                         </div>
-                        <Table>
-                            <thead>
-                                <tr>
-                                    <th>Ответ</th>
-                                    <th>Правильный</th>
-                                    <th>Действия</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {newAnswers.map((answer) => (
-                                    <tr key={answer.num} className="align-middle">
-                                        <td>
-                                            <Form.Control
-                                                type="text"
-                                                placeholder="Введите текст ответа"
-                                                value={answer.answer_body}
-                                                onChange={(event) => handleNewAnswerChange(event, answer.num)}
-                                            />
-                                        </td>
-                                        <td>
-                                            <Form.Group controlId="correctness" className='d-flex justify-content-center'>
-                                                <Form.Check type="checkbox"/>
-                                            </Form.Group>
-                                        </td>
-                                        <td>
-                                            <DeleteItemConfirmation
-                                                onDelete={() => handleDeleteNewAnswer(answer.num)}
-                                            />
-                                        </td>
+                        <div className='table-responsive'>
+                            <Table>
+                                <thead>
+                                    <tr>
+                                        <th>Ответ</th>
+                                        <th>Правильный</th>
+                                        <th>Действия</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </Table>
+                                </thead>
+                                <tbody>
+                                    {modalAnswers.map((answer) => (
+                                        <tr key={answer.id} className="align-middle">
+                                            <td>
+                                                <Form.Group controlId={`answer${answer.id}`} className='d-flex justify-content-center'>
+                                                    <Form.Control
+                                                        as="textarea"
+                                                        rows={1}
+                                                        placeholder="Введите текст ответа"
+                                                        value={answer.answer_body}
+                                                        onChange={(event) => handleModalAnswerChange(event, answer.id, 'answer_body')}
+                                                    />
+                                                </Form.Group>
+                                            </td>
+                                            <td>
+                                                <Form.Group controlId={`correctness${answer.id}`} className='d-flex justify-content-center'>
+                                                    <Form.Check type="checkbox" onChange={(event) => handleModalAnswerChange(event, answer.id, 'correctness')} />
+                                                </Form.Group>
+                                            </td>
+                                            <td>
+                                                <DeleteItemConfirmation
+                                                    onDelete={() => handleDeleteModalAnswer(answer.id)}
+                                                />
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </Table>
+                        </div>
                     </Modal.Body>
                     <Modal.Footer>
                         <Button variant="secondary" onClick={handleModalCancel}>
@@ -320,7 +338,7 @@ const Questions = () => {
                     </Modal.Footer>
                 </Form>
             </Modal>
-        </div>
+        </div >
     );
 };
 

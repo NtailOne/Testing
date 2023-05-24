@@ -194,26 +194,28 @@ const Topics = () => {
                         <Modal.Title>{selectedTopic.topic_name}</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
-                        <Table bordered hover className='bg-white text-black'>
-                            <thead>
-                                <tr>
-                                    <th>Вопрос</th>
-                                    <th>Действия</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {questions.map((question) => (
-                                    <tr key={question.id}>
-                                        <td>{question.question_body}</td>
-                                        <td className='d-flex flex-wrap justify-content-end gap-2'>
-                                            <DeleteItemConfirmation
-                                                onDelete={() => handleDeleteQuestion(question.id)}
-                                            />
-                                        </td>
+                        <div className='table-responsive'>
+                            <Table bordered hover className='bg-white text-black'>
+                                <thead>
+                                    <tr>
+                                        <th>Вопрос</th>
+                                        <th>Действия</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </Table>
+                                </thead>
+                                <tbody>
+                                    {questions.map((question) => (
+                                        <tr key={question.id}>
+                                            <td>{question.question_body}</td>
+                                            <td className='d-flex flex-wrap justify-content-end gap-2'>
+                                                <DeleteItemConfirmation
+                                                    onDelete={() => handleDeleteQuestion(question.id)}
+                                                />
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </Table>
+                        </div>
                     </Modal.Body>
                 </Form>
             </Modal>
