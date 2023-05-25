@@ -17,20 +17,32 @@ const Questions = () => {
     const [answers, setAnswers] = useState([]);
     const [newAnswerId, setNewAnswerId] = useState(-1);
     const [modalAnswers, setModalAnswers] = useState([]);
+    const [modalAnswersToDelete, setModalAnswersToDelete] = useState([]);
 
     let tableName = 'Вопросы';
 
     useEffect(() => {
-        axios.get(`/questions-table`).then((response) => {
-            setQuestionsTable(response.data);
-        });
+        getQuestionsTable();
         axios.get(`/questions`).then((response) => {
             setQuestions(response.data);
         });
+        getAnswers();
+        axios.get(`/topics`).then((response) => {
+            setOptions(response.data.map(topic => ({ value: topic.id, label: topic.topic_name })));
+        });
+    }, []);
+
+    const getQuestionsTable = () => {
+        axios.get(`/questions-table`).then((response) => {
+            setQuestionsTable(response.data);
+        });
+    }
+
+    const getAnswers = () => {
         axios.get(`/answers`).then((response) => {
             setAnswers(response.data);
         });
-    }, []);
+    }
 
     const handleSearch = (event) => {
         setSearchTerm(event.target.value);
@@ -70,6 +82,7 @@ const Questions = () => {
     };
 
     const handleDeleteModalAnswer = (answerId) => {
+        setModalAnswersToDelete(modalAnswers.filter((modalAnswer) => modalAnswer.id === answerId));
         setModalAnswers(modalAnswers.filter((modalAnswer) => modalAnswer.id !== answerId));
     };
 
@@ -83,9 +96,6 @@ const Questions = () => {
     };
 
     const handleShowAddModal = () => {
-        axios.get(`/topics`).then((response) => {
-            setOptions(response.data.map(topic => ({ value: topic.id, label: topic.topic_name })));
-        });
         setShowAddModal(true);
     };
 
@@ -93,8 +103,9 @@ const Questions = () => {
         const currQuestion = questions.find(question => questionsFromTable.id == question.id);
         if (currQuestion !== undefined) {
             setSelectedQuestion(currQuestion);
-            setModalAnswers(answers.filter(answer => answer.question_id == currQuestion.id));
-            setSelectedOption(options.filter(option => option.value === currQuestion.topic_id));
+            setModalAnswers(answers.filter(answer => answer.question_id == currQuestion.id)
+                .map(answer => ({ ...answer, correctness: answer.correctness > 0 })));
+            setSelectedOption(currQuestion.topic_id);
             setShowEditModal(true);
         } else {
             console.error(`User with id ${questionsFromTable.id} not found`);
@@ -141,9 +152,7 @@ const Questions = () => {
                 setAnswers((prevState) => [...prevState, ...newAnswers]);
             });
             handleModalCancel();
-            axios.get(`/questions-table`).then((response) => {
-                setQuestionsTable(response.data);
-            });
+            getQuestionsTable();
             setShowAddModal(false);
         });
     };
@@ -151,25 +160,39 @@ const Questions = () => {
     const handleEditSubmit = (event) => {
         event.preventDefault();
 
+        if (selectedOption === null) {
+            alert('Выберите тему')
+            return;
+        } else if (modalAnswers.length === 1) {
+            alert('У тестового вопроса не может быть один ответ')
+            return;
+        } else if (modalAnswers.length === 0) {
+            alert('Вы не добавили ни одного ответа')
+            return;
+        }
+
+        const countTrue = modalAnswers.filter(answer => answer.correctness === true).length;
+        const countFalse = modalAnswers.length - countTrue;
+
+        const updatedAnswers = modalAnswers.map(answer => {
+            let value = answer.correctness === true ? 1 / countTrue : -1 / countFalse;
+            return { ...answer, correctness: value };
+        });
+
         const form = event.target;
         const body = {
-            topic_id: form.topic.value,
-            question_body: form.question.value,
+            topic_id: selectedOption,
+            question_body: form.question.value
         };
 
         axios.put(`/questions/${selectedQuestion.id}`, body).then(() => {
-            setQuestions(
-                questions.map((question) =>
-                    question.id === selectedQuestion.id ? { ...question, ...body } : question
-                )
-            );
-            modalAnswers.forEach(answer => {
+            const answerPromises = updatedAnswers.map(answer => {
                 if (answer.id < 0) {
-                    axios.post(`/answers`, answer).then((response) => {
+                    return axios.post(`/answers`, { ...answer, question_id: selectedQuestion.id }).then((response) => {
                         setAnswers([...answers, response.data]);
                     });
                 } else if (answer.id >= 0) {
-                    axios.put(`/answers/${answer.id}`, answer).then(() => {
+                    return axios.put(`/answers/${answer.id}`, answer).then(() => {
                         setAnswers(
                             answers.map((a) =>
                                 a.id === answer.id ? { ...a, ...answer } : answer
@@ -177,17 +200,37 @@ const Questions = () => {
                         );
                     });
                 }
+                return Promise.resolve();
             });
-            axios.get(`/questions-table`).then((response) => {
-                setQuestionsTable(response.data);
+            const answerDeletePromises = modalAnswersToDelete.map(answer => {
+                return axios.delete(`/answers/${answer.id}`).then(() => {
+                    setModalAnswersToDelete(
+                        modalAnswersToDelete.filter(a => a.id !== answer.id)
+                    );
+                });
             });
-            setShowEditModal(false);
+            Promise.all([...answerPromises, ...answerDeletePromises]).then(() => {
+                setQuestions(
+                    questions.map((question) =>
+                        question.id === selectedQuestion.id ? { ...question, ...body } : question
+                    )
+                );
+                getQuestionsTable();
+                getAnswers();
+                setShowEditModal(false);
+            }).catch((error) => {
+                console.log("Error updating answers: ", error);
+            });
+        }).catch((error) => {
+            console.log("Error updating question: ", error);
         });
     };
 
     const handleDelete = (id) => {
         axios.delete(`/questions/${id}`).then(() => {
-            setQuestions(questions.filter((question) => question.id !== id));
+            setQuestions(questions.filter(question => question.id !== id));
+            setQuestionsTable(questionsTable.filter(question => question.id !== id));
+            setAnswers(answers.filter(answer => answer.question_id !== id));
         });
     };
 
@@ -230,11 +273,14 @@ const Questions = () => {
                                 <td>{question.question_body}</td>
                                 <td>
                                     <ul>
-                                        {answers.filter((answer) => (
-                                            question.id === answer.question_id
-                                        )).map((answer) => (
-                                            <li key={answer.id} className={answer.correctness > 0 ? 'correct-answer' : ''}>{answer.answer_body}</li>
-                                        ))}
+                                        {answers
+                                            .filter((answer) => question.id === answer.question_id)
+                                            .map((answer, index) => (
+                                                <li key={index} className={answer.correctness > 0 ? 'correct-answer' : ''}>
+                                                    {answer.answer_body}
+                                                </li>
+                                            ))
+                                        }
                                     </ul>
                                 </td>
                                 <td className='d-flex flex-wrap justify-content-end gap-2'>
@@ -387,7 +433,7 @@ const Questions = () => {
                                             </td>
                                             <td>
                                                 <Form.Group controlId={`correctness${answer.id}`} className='d-flex justify-content-center'>
-                                                    <Form.Check type="checkbox" onChange={(event) => handleModalAnswerChange(event, answer.id, 'correctness')} />
+                                                    <Form.Check type="checkbox" defaultChecked={answer.correctness > 0} onChange={(event) => handleModalAnswerChange(event, answer.id, 'correctness')} />
                                                 </Form.Group>
                                             </td>
                                             <td>
@@ -406,7 +452,7 @@ const Questions = () => {
                             Отмена
                         </Button>
                         <Button variant="primary" type="submit">
-                            Добавить
+                            Сохранить изменения
                         </Button>
                     </Modal.Footer>
                 </Form>

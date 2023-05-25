@@ -298,6 +298,44 @@ async function executeSelectSqlQuery(pool, sql, res) {
             }
         });
 
+        app.put('/questions/:id', async (req, res) => {
+            const id = req.params.id;
+            const { topic_id, question_body } = req.body;
+            const sql = 'UPDATE questions SET topic_id = ?, question_body = ? WHERE id = ?';
+            try {
+                const [result] = await pool.execute(sql, [topic_id, question_body, id]);
+                if (result.affectedRows > 0) {
+                    console.log(`Updated question with id ${id}`);
+                    const question = { id: Number(id), topic_id, question_body };
+                    res.status(200).json(question);
+                } else {
+                    res.status(404).send('Question not found');
+                }
+            } catch (err) {
+                console.error(err);
+                res.status(500).send('Error updating question');
+            }
+        });
+
+        app.put('/answers/:id', async (req, res) => {
+            const id = req.params.id;
+            const { question_id, answer_body, correctness } = req.body;
+            const sql = 'UPDATE answers SET question_id = ?, answer_body = ?, correctness = ? WHERE id = ?';
+            try {
+                const [result] = await pool.execute(sql,[question_id, answer_body, correctness, id]);
+                if (result.affectedRows > 0) {
+                    console.log(`Updated answer with id ${id}`);
+                    const answer = { id: Number(id), question_id, answer_body, correctness };
+                    res.status(200).json(answer);
+                } else {
+                    res.status(404).send('Answer not found');
+                }
+            } catch (err) {
+                console.error(err);
+                res.status(500).send('Error updating answer');
+            }
+        });
+
         // Запросы на удаление записей из БД
         app.delete('/users/:id', async (req, res) => {
             const id = req.params.id;
@@ -364,6 +402,23 @@ async function executeSelectSqlQuery(pool, sql, res) {
             } catch (err) {
                 console.error(err);
                 res.status(500).send('Error deleting question');
+            }
+        });
+
+        app.delete('/answers/:id', async (req, res) => {
+            const id = req.params.id;
+            const sql = 'DELETE FROM answers WHERE id = ?';
+            try {
+                const [result] = await pool.execute(sql, [id]);
+                if (result.affectedRows > 0) {
+                    console.log(`Deleted answer with id ${id}`);
+                    res.status(200).send(`Answer with id ${id} deleted`);
+                } else {
+                    res.status(404).send('Answer not found');
+                }
+            } catch (err) {
+                console.error(err);
+                res.status(500).send('Error deleting answer');
             }
         });
 
