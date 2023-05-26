@@ -3,6 +3,7 @@ import { Table, Button, Modal, Form } from 'react-bootstrap';
 import { Typeahead } from 'react-bootstrap-typeahead'
 import axios from 'axios';
 import DeleteItemConfirmation from '../../../components/DeleteConfirmation';
+import LoadingIndicator from '../../../components/LoadingIndicator';
 
 const Questions = () => {
     const [questions, setQuestions] = useState([]);
@@ -10,6 +11,7 @@ const Questions = () => {
     const [selectedQuestion, setSelectedQuestion] = useState({});
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showExcelModal, setShowExcelModal] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [searchColumn, setSearchColumn] = useState('question_body');
     const [options, setOptions] = useState([]);
@@ -18,23 +20,32 @@ const Questions = () => {
     const [newAnswerId, setNewAnswerId] = useState(-1);
     const [modalAnswers, setModalAnswers] = useState([]);
     const [modalAnswersToDelete, setModalAnswersToDelete] = useState([]);
+    const [loading, setLoading] = useState(false);
 
     let tableName = 'Вопросы';
 
     useEffect(() => {
         getQuestionsTable();
-        axios.get(`/questions`).then((response) => {
-            setQuestions(response.data);
-        });
+        getQuestions();
         getAnswers();
-        axios.get(`/topics`).then((response) => {
-            setOptions(response.data.map(topic => ({ value: topic.id, label: topic.topic_name })));
-        });
+        getTopics();
     }, []);
 
     const getQuestionsTable = () => {
         axios.get(`/questions-table`).then((response) => {
             setQuestionsTable(response.data);
+        });
+    }
+
+    const getQuestions = () => {
+        axios.get(`/questions`).then((response) => {
+            setQuestions(response.data);
+        });
+    }
+
+    const getTopics = () => {
+        axios.get(`/topics`).then((response) => {
+            setOptions(response.data.map(topic => ({ value: topic.id, label: topic.topic_name })));
         });
     }
 
@@ -91,8 +102,10 @@ const Questions = () => {
         setSelectedOption(null);
         setNewAnswerId(-1);
         setModalAnswers([]);
+        setModalAnswersToDelete([]);
         setShowAddModal(false);
         setShowEditModal(false);
+        setShowExcelModal(false);
     };
 
     const handleShowAddModal = () => {
@@ -111,6 +124,10 @@ const Questions = () => {
             console.error(`User with id ${questionsFromTable.id} not found`);
         }
     };
+
+    const handleShowExcelModal = () => {
+        setShowExcelModal(true);
+    }
 
     const handleAddSubmit = (event) => {
         event.preventDefault();
@@ -188,35 +205,24 @@ const Questions = () => {
         axios.put(`/questions/${selectedQuestion.id}`, body).then(() => {
             const answerPromises = updatedAnswers.map(answer => {
                 if (answer.id < 0) {
-                    return axios.post(`/answers`, { ...answer, question_id: selectedQuestion.id }).then((response) => {
-                        setAnswers([...answers, response.data]);
-                    });
+                    return axios.post(`/answers`, { ...answer, question_id: selectedQuestion.id });
                 } else if (answer.id >= 0) {
-                    return axios.put(`/answers/${answer.id}`, answer).then(() => {
-                        setAnswers(
-                            answers.map((a) =>
-                                a.id === answer.id ? { ...a, ...answer } : answer
-                            )
-                        );
-                    });
+                    return axios.put(`/answers/${answer.id}`, answer);
                 }
                 return Promise.resolve();
             });
             const answerDeletePromises = modalAnswersToDelete.map(answer => {
-                return axios.delete(`/answers/${answer.id}`).then(() => {
-                    setModalAnswersToDelete(
-                        modalAnswersToDelete.filter(a => a.id !== answer.id)
-                    );
-                });
+                return axios.delete(`/answers/${answer.id}`);
             });
             Promise.all([...answerPromises, ...answerDeletePromises]).then(() => {
+                getAnswers();
                 setQuestions(
                     questions.map((question) =>
                         question.id === selectedQuestion.id ? { ...question, ...body } : question
                     )
                 );
                 getQuestionsTable();
-                getAnswers();
+                setModalAnswersToDelete([]);
                 setShowEditModal(false);
             }).catch((error) => {
                 console.log("Error updating answers: ", error);
@@ -231,6 +237,124 @@ const Questions = () => {
             setQuestions(questions.filter(question => question.id !== id));
             setQuestionsTable(questionsTable.filter(question => question.id !== id));
             setAnswers(answers.filter(answer => answer.question_id !== id));
+        });
+    };
+
+    const handleExcelSubmit = async (event) => {
+        event.preventDefault();
+        const file = event.target.formFile.files[0];
+        try {
+            setShowExcelModal(false);
+            setLoading(true);
+            await parseCsv(file);
+            getAnswers();
+            getQuestions();
+            getTopics();
+            await getQuestionsTable();
+            setLoading(false);
+        } catch (error) {
+            console.log('Error parsing CSV:', error);
+        }
+    };
+
+    const parseCsv = async (file) => {
+        return new Promise(async (resolve, reject) => {
+            const allowedExtensions = ['csv'];
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+            if (!allowedExtensions.includes(fileExtension)) {
+                alert(`Ошибка: недопустимое расширение файла (${fileExtension}). Допустимые расширения: ${allowedExtensions.join(', ')}`);
+                setLoading(false);
+                return;
+            }
+            const reader = new FileReader();
+            reader.readAsText(file);
+            reader.onload = async (event) => {
+                const csv = event.target.result;
+                const answerStartIndex = 2;
+                const failedRecords = [];
+                const lines = csv.split('\n');
+                for (let i = 0, iLen = lines.length - 1; i < iLen; i++) {
+                    const cellsSplitted = lines[i].split(';');
+                    const cellsTrimmed = cellsSplitted.map(cell => cell.trim())
+                    const cellsSliceFirst = cellsTrimmed.slice(0, answerStartIndex);
+                    const cellsSliceSecond = cellsTrimmed.slice(answerStartIndex).filter(cell => cell !== '' && cell !== '\r');
+                    const cells = cellsSliceFirst.concat(cellsSliceSecond);
+
+                    if (cells.length < 4) {
+                        failedRecords.push({ record: i + 1, reason: 'Количество ответов меньше двух' });
+                        continue;
+                    }
+                    const topicName = cells[0];
+                    console.log(topicName, " - ", topicName === "")
+                    if (topicName === "") {
+                        failedRecords.push({ record: i + 1, reason: 'Отсутствует тема' });
+                        continue;
+                    }
+                    const questionBody = cells[1];
+                    console.log(questionBody, " - ", questionBody === "")
+                    if (questionBody === "") {
+                        failedRecords.push({ record: i + 1, reason: 'Отсутствует вопрос' });
+                        continue;
+                    } else if (questions.some(question => question.question_body === questionBody)) {
+                        failedRecords.push({ record: i + 1, reason: 'Такой вопрос уже существует в базе' });
+                        continue;
+                    }
+                    const answerCells = cells.slice(answerStartIndex);
+                    const answerBodies = answerCells.map((answer) => answer);
+                    if (answerBodies.some(answer => answer === "" || answer === "*")) {
+                        failedRecords.push({ record: i + 1, reason: 'Обнаружен пустой ответ' });
+                        continue;
+                    }
+                    const correctAnswerIndexes = answerBodies.reduce((acc, answer, index) => {
+                        if (answer[0] === '*') {
+                            acc.push(index);
+                        }
+                        return acc;
+                    }, []);
+                    const answersWithCorrectness = answerBodies.map((answer, index) => {
+                        const isCorrect = correctAnswerIndexes.includes(index);
+                        return {
+                            answer_body: answer.slice(1),
+                            correctness: isCorrect,
+                        };
+                    });
+                    if (answersWithCorrectness.every(answer => answer.correctness === false)) {
+                        failedRecords.push({ record: i + 1, reason: 'Все ответы неверные' });
+                        continue;
+                    }
+
+                    const countTrue = answersWithCorrectness.filter(answer => answer.correctness === true).length;
+                    const countFalse = answersWithCorrectness.length - countTrue;
+
+                    const updatedAnswers = answersWithCorrectness.map(answer => {
+                        let value = answer.correctness === true ? 1 / countTrue : -1 / countFalse;
+                        return { ...answer, correctness: value };
+                    });
+                    let topicId;
+                    const topicIndex = options.findIndex((option) => option.label === topicName);
+                    if (topicIndex === -1) {
+                        const newTopic = { topic_name: topicName };
+                        const response = await axios.post('/topics', newTopic);
+                        topicId = response.data.id;
+                    } else {
+                        topicId = options[topicIndex].value;
+                    }
+                    const newQuestion = { topic_id: topicId, question_body: questionBody };
+                    const questionResponse = await axios.post('/questions', newQuestion);
+                    const questionId = questionResponse.data.id;
+                    const answerPromises = updatedAnswers.map((answer) => {
+                        const newAnswer = { question_id: questionId, answer_body: answer.answer_body, correctness: answer.correctness };
+                        return axios.post('/answers', newAnswer);
+                    });
+                    await Promise.all(answerPromises);
+                }
+                if (failedRecords.length > 0) {
+                    const message = failedRecords.map(({ record, reason }) => `Запись №${record}. Причина: ${reason}`).join('\n');
+                    alert(`Следующие записи не прошли валидацию:\n${message}`);
+                }
+                resolve();
+            };
+            reader.onerror = (error) => reject(error);
         });
     };
 
@@ -251,12 +375,15 @@ const Questions = () => {
                         placeholder='Поиск по критерию'
                     />
                 </div>
-                <Button className='col-12 col-md-2' variant="primary" onClick={handleShowAddModal}>
+                <Button className='col-12 col-sm' variant="success" onClick={handleShowExcelModal}>
+                    Загрузить из Excel
+                </Button>
+                <Button className='col-12 col-sm' variant="primary" onClick={handleShowAddModal}>
                     Добавить
                 </Button>
             </div>
 
-            <div className='table-responsive'>
+            {loading ? <LoadingIndicator /> : <div className='table-responsive'>
                 <Table bordered hover className='bg-white text-black'>
                     <thead>
                         <tr>
@@ -298,7 +425,7 @@ const Questions = () => {
                         ))}
                     </tbody>
                 </Table>
-            </div>
+            </div>}
 
             <Modal show={showAddModal} onHide={handleModalCancel}>
                 <Form onSubmit={handleAddSubmit}>
@@ -453,6 +580,66 @@ const Questions = () => {
                         </Button>
                         <Button variant="primary" type="submit">
                             Сохранить изменения
+                        </Button>
+                    </Modal.Footer>
+                </Form>
+            </Modal>
+
+            <Modal show={showExcelModal} onHide={handleModalCancel}>
+                <Form onSubmit={handleExcelSubmit}>
+                    <Modal.Header closeButton>
+                        <Modal.Title>Загрузка из Excel</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <p>Структура файла должна быть как на примере ниже:</p>
+                        <div className='table-responsive'>
+                            <Table bordered>
+                                <thead>
+                                    <tr className="text-center">
+                                        <th>A</th>
+                                        <th>B</th>
+                                        <th>C</th>
+                                        <th>D</th>
+                                        <th>E</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr className="text-center">
+                                        <td>Тема1</td>
+                                        <td>Вопрос1</td>
+                                        <td>Ответ1</td>
+                                        <td>*Ответ2</td>
+                                        <td>Ответ3</td>
+                                    </tr>
+                                    <tr className="text-center">
+                                        <td>Тема1</td>
+                                        <td>Вопрос2</td>
+                                        <td>*Ответ1</td>
+                                        <td>*Ответ2</td>
+                                        <td>Ответ3</td>
+                                    </tr>
+                                    <tr className="text-center">
+                                        <td>Тема2</td>
+                                        <td>Вопрос1</td>
+                                        <td>Ответ1</td>
+                                        <td>Ответ2</td>
+                                        <td>*Ответ3</td>
+                                    </tr>
+                                </tbody>
+                            </Table>
+                        </div>
+                        <p>"*" перед ответом означает, что ответ правильный</p>
+                        <Form.Group controlId="formFile">
+                            <Form.Label>Выберите файл</Form.Label>
+                            <Form.Control type="file" required name="fileInput" />
+                        </Form.Group>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button variant="secondary" onClick={handleModalCancel}>
+                            Отмена
+                        </Button>
+                        <Button variant="primary" type="submit">
+                            Загрузить
                         </Button>
                     </Modal.Footer>
                 </Form>
