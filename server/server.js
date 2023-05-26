@@ -134,7 +134,10 @@ async function executeSelectSqlQuery(pool, sql, res) {
         });
 
         app.get('/tests-table', async (req, res) => {
-            const sql = `SELECT tests.id, tests.test_name, tests.start_time, tests.end_time, courses.course_num, courses_groups.group_name, CONCAT(users.surname, ' ', users.name, ' ', users.patronymic) AS student_name
+            const sql = `SELECT tests.id, tests.test_name, tests.start_time, tests.end_time,
+                courses.course_num, courses_groups.group_name,
+                CONCAT(users.surname, ' ', users.name, ' ', users.patronymic) AS student_name,
+                
                 FROM tests
                 JOIN courses ON tests.course_id = courses.id
                 LEFT JOIN courses_groups ON tests.group_id = courses_groups.id
@@ -322,7 +325,7 @@ async function executeSelectSqlQuery(pool, sql, res) {
             const { question_id, answer_body, correctness } = req.body;
             const sql = 'UPDATE answers SET question_id = ?, answer_body = ?, correctness = ? WHERE id = ?';
             try {
-                const [result] = await pool.execute(sql,[question_id, answer_body, correctness, id]);
+                const [result] = await pool.execute(sql, [question_id, answer_body, correctness, id]);
                 if (result.affectedRows > 0) {
                     console.log(`Updated answer with id ${id}`);
                     const answer = { id: Number(id), question_id, answer_body, correctness };

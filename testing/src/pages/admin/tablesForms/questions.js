@@ -285,13 +285,11 @@ const Questions = () => {
                         continue;
                     }
                     const topicName = cells[0];
-                    console.log(topicName, " - ", topicName === "")
                     if (topicName === "") {
                         failedRecords.push({ record: i + 1, reason: 'Отсутствует тема' });
                         continue;
                     }
                     const questionBody = cells[1];
-                    console.log(questionBody, " - ", questionBody === "")
                     if (questionBody === "") {
                         failedRecords.push({ record: i + 1, reason: 'Отсутствует вопрос' });
                         continue;

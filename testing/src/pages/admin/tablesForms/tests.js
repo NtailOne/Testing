@@ -1,73 +1,141 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Modal, Form } from 'react-bootstrap';
+import { Typeahead } from 'react-bootstrap-typeahead';
 import axios from 'axios';
+import DeleteItemConfirmation from '../../../components/DeleteConfirmation';
+import LoadingIndicator from '../../../components/LoadingIndicator';
 
 const Tests = () => {
-    const [items, setItems] = useState([]);
-    const [selectedItem, setSelectedItem] = useState({});
+    const [testsTable, setTestsTable] = useState([]);
+    const [tests, setTests] = useState([]);
+    const [questions, setQuestions] = useState([]);
+    const [topics, setTopics] = useState([]);
+    const [users, setUsers] = useState([]);
+    const [groups, setGroups] = useState([]);
+    const [courses, setCourses] = useState([]);
+    const [selectedTest, setSelectedTest] = useState({});
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [searchColumn, setSearchColumn] = useState('test_name');
+    const [loading, setLoading] = useState(false);
 
     let tableName = 'Тесты';
 
     useEffect(() => {
-        axios.get(`/tests`).then((response) => {
-            setItems(response.data);
-        });
+        getTestsTable();
+        getTests();
     }, []);
+
+    const getTestsTable = () => {
+        axios.get(`/tests-table`).then((response) => {
+            setTestsTable(response.data);
+        });
+    }
+
+    const getTests = () => {
+        axios.get(`/tests`).then((response) => {
+            setTests(response.data);
+        });
+    }
+
+    const getQuestions = () => {
+        axios.get(`/questions`).then((response) => {
+            setQuestions(response.data);
+        });
+    }
+
+    const getTopics = () => {
+        axios.get(`/topics`).then((response) => {
+            setTopics(response.data);
+        });
+    }
+
+    const getUsers = () => {
+        axios.get(`/users`).then((response) => {
+            setUsers(response.data);
+        });
+    }
+
+    const getGroups = () => {
+        axios.get(`/groups`).then((response) => {
+            setGroups(response.data);
+        });
+    }
+
+    const getCourses = () => {
+        axios.get(`/courses`).then((response) => {
+            setCourses(response.data);
+        });
+    }
 
     const handleSearch = (event) => {
         setSearchTerm(event.target.value);
+    };
+
+    const handleColumnSelect = (event) => {
+        setSearchColumn(event.target.value);
+    };
+
+    const filteredQuestions = testsTable.filter((test) => {
+        const value = test[searchColumn];
+        const term = searchTerm.toLowerCase();
+        return value && value.toString().toLowerCase().includes(term);
+    });
+
+    const handleModalCancel = () => {
+        
+        setShowAddModal(false);
+        setShowEditModal(false);
     };
 
     const handleShowAddModal = () => {
         setShowAddModal(true);
     };
 
-    const handleShowEditModal = (item) => {
-        setSelectedItem(item);
+    const handleShowEditModal = (test) => {
+        setSelectedTest(test);
         setShowEditModal(true);
-    };
-
-    const handleDelete = (id) => {
-        axios.delete(`/tests/${id}`).then(() => {
-            setItems(items.filter((item) => item.id !== id));
-        });
     };
 
     const handleAddSubmit = (event) => {
         event.preventDefault();
 
-        const form = event.target;
-        const body = {
-            title: form.title.value,
-            description: form.description.value,
-        };
+        // const form = event.target;
+        // const body = {
+        //     title: form.title.value,
+        //     description: form.description.value,
+        // };
 
-        axios.post(`/tests`, body).then((response) => {
-            setItems([...items, response.data]);
-            setShowAddModal(false);
-        });
+        // axios.post(`/tests`, body).then((response) => {
+        //     setTests([...tests, response.data]);
+        //     setShowAddModal(false);
+        // });
     };
 
     const handleEditSubmit = (event) => {
         event.preventDefault();
 
-        const form = event.target;
-        const body = {
-            title: form.title.value,
-            description: form.description.value,
-        };
+        // const form = event.target;
+        // const body = {
+        //     title: form.title.value,
+        //     description: form.description.value,
+        // };
 
-        axios.put(`/tests/${selectedItem.id}`, body).then(() => {
-            setItems(
-                items.map((item) =>
-                    item.id === selectedItem.id ? { ...item, ...body } : item
-                )
-            );
-            setShowEditModal(false);
-        });
+        // axios.put(`/tests/${selectedTest.id}`, body).then(() => {
+        //     setTests(
+        //         tests.map((test) =>
+        //             test.id === selectedTest.id ? { ...test, ...body } : test
+        //         )
+        //     );
+        //     setShowEditModal(false);
+        // });
+    };
+
+    const handleDelete = (id) => {
+        // axios.delete(`/tests/${id}`).then(() => {
+        //     setTests(tests.filter((test) => test.id !== id));
+        // });
     };
 
     return (
@@ -75,80 +143,49 @@ const Tests = () => {
             <div className='d-flex flex-wrap justify-content-between mb-4 gap-4'>
                 <h1 className='text-white'>{tableName}</h1>
                 <div className='d-flex flex-wrap gap-2 col-12 col-md-auto'>
+                    <Form.Select className='search-bar' value={searchColumn} onChange={handleColumnSelect}>
+                        <option value='question_body'>Вопрос</option>
+                        <option value='topic_name'>Тема</option>
+                    </Form.Select>
                     <Form.Control
                         className='search-bar'
                         type='text'
                         value={searchTerm}
                         onChange={handleSearch}
-                        placeholder='Поиск'
+                        placeholder='Поиск по критерию'
                     />
                 </div>
-                <Button className='col-12 col-md-2' variant="primary" onClick={handleShowAddModal}>
+                <Button className='col-12 col-sm' variant="primary" onClick={handleShowAddModal}>
                     Добавить
                 </Button>
             </div>
 
-            <div className='table-responsive'>
+            {loading ? <LoadingIndicator /> : <div className='table-responsive'>
                 <Table bordered hover className='bg-white text-black'>
                     <thead>
                         <tr>
-                            <th>Название</th>
-                            <th>Время доступа</th>
-                            <th>Курс</th>
-                            <th>Группа</th>
-                            <th>Студент</th>
+                            <th>Тема</th>
+                            <th>Вопрос</th>
+                            <th>Ответы</th>
                             <th>Действия</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {items.map((item) => (
-                            <tr key={item.id}>
-                                <td>{item.test_name}</td>
-                                <td>{item.start_time} - {item.end_time}</td>
-                                <td>{item.course_num}</td>
-                                <td>{item.group_name}</td>
-                                <td>{item.student_name}</td>
-                                <td className='d-flex flex-wrap justify-content-end gap-2'>
-                                    <Button
-                                        variant="warning"
-                                        onClick={() => handleShowEditModal(item)}
-                                    >
-                                        Редактировать
-                                    </Button>
-                                    <Button
-                                        variant="danger"
-                                        onClick={() => handleDelete(item.id)}
-                                    >
-                                        Удалить
-                                    </Button>
-                                </td>
-                            </tr>
-                        ))}
+                        
                     </tbody>
                 </Table>
-            </div>
+            </div>}
 
-            <Modal show={showAddModal} onHide={() => setShowAddModal(false)}>
+            <Modal show={showAddModal} onHide={handleModalCancel}>
                 <Form onSubmit={handleAddSubmit}>
                     <Modal.Header closeButton>
                         <Modal.Title>Добавить элемент</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
-                        <Form.Group controlId="title">
-                            <Form.Label className='mb-1 mt-2'>Название</Form.Label>
-                            <Form.Control type="text" placeholder="Введите название" />
-                        </Form.Group>
-                        <Form.Group controlId="description">
-                            <Form.Label className='mb-1 mt-2'>Описание</Form.Label>
-                            <Form.Control
-                                as="textarea"
-                                rows={3}
-                                placeholder="Введите описание"
-                            />
-                        </Form.Group>
+
                     </Modal.Body>
                     <Modal.Footer>
-                        <Button variant="secondary" onClick={() => setShowAddModal(false)}>
+                        <Button variant="secondary" onClick={handleModalCancel}>
                             Отмена
                         </Button>
                         <Button variant="primary" type="submit">
@@ -158,30 +195,16 @@ const Tests = () => {
                 </Form>
             </Modal>
 
-            <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
+            <Modal show={showEditModal} onHide={handleModalCancel}>
                 <Form onSubmit={handleEditSubmit}>
                     <Modal.Header closeButton>
                         <Modal.Title>Редактировать элемент</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
-                        <Form.Group controlId="title">
-                            <Form.Label className='mb-1 mt-2'>Название</Form.Label>
-                            <Form.Control
-                                type="text"
-                                defaultValue={selectedItem.title}
-                            />
-                        </Form.Group>
-                        <Form.Group controlId="description">
-                            <Form.Label className='mb-1 mt-2'>Описание</Form.Label>
-                            <Form.Control
-                                as="textarea"
-                                rows={3}
-                                defaultValue={selectedItem.description}
-                            />
-                        </Form.Group>
+
                     </Modal.Body>
                     <Modal.Footer>
-                        <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+                        <Button variant="secondary" onClick={handleModalCancel}>
                             Отмена
                         </Button>
                         <Button variant="primary" type="submit">
@@ -190,7 +213,7 @@ const Tests = () => {
                     </Modal.Footer>
                 </Form>
             </Modal>
-        </div>
+        </div >
     );
 };
 
