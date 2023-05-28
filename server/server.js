@@ -134,30 +134,19 @@ async function executeSelectSqlQuery(pool, sql, res) {
         });
 
         app.get('/tests-table', async (req, res) => {
-            const sql = `SELECT tests.id, tests.test_name, tests.start_time, tests.end_time,
-                courses.course_num, courses_groups.group_name,
-                CONCAT(users.surname, ' ', users.name, ' ', users.patronymic) AS student_name,
-                
+            const sql = `SELECT tests.id, 
+                tests.test_name, 
+                tests.start_time, 
+                tests.end_time, 
+                tests.time_to_pass, 
+                tests.max_score, 
+                CONCAT(users.surname, ' ', users.name, ' ', users.patronymic) AS teacher_name, 
+                tests.count_in_stats 
                 FROM tests
-                JOIN courses ON tests.course_id = courses.id
-                LEFT JOIN courses_groups ON tests.group_id = courses_groups.id
-                LEFT JOIN users ON tests.student_id = users.id;`;
+                JOIN users ON tests.teacher_id = users.id;`;
             await executeSelectSqlQuery(pool, sql, res);
         });
-
-        // Запросы на получение необходимых записей таблиц БД
-        app.get('/questions/:topicId', async (req, res) => {
-            const topicId = req.params.topicId;
-            const sql = 'SELECT * FROM questions WHERE topic_id = ?';
-            try {
-                const [rows] = await pool.execute(sql, [topicId]);
-                res.status(200).json(rows);
-            } catch (err) {
-                console.error(err);
-                res.status(500).send('Error retrieving questions');
-            }
-        });
-
+        
         // Запросы на добавление записей в БД
         app.post('/users', async (req, res) => {
             const { role_id, email, password, surname, name, patronymic, course_id, group_id } = req.body;
@@ -192,7 +181,7 @@ async function executeSelectSqlQuery(pool, sql, res) {
                 res.status(500).send('Error adding topic');
             }
         });
-
+        
         app.post('/groups', async (req, res) => {
             const { group_name, course_id } = req.body;
             const sql = 'INSERT INTO courses_groups (group_name, course_id) VALUES (?, ?)';
@@ -206,7 +195,7 @@ async function executeSelectSqlQuery(pool, sql, res) {
                 res.status(500).send('Error adding group');
             }
         });
-
+        
         app.post('/questions', async (req, res) => {
             const { topic_id, question_body } = req.body;
             const sql = 'INSERT INTO questions (topic_id, question_body) VALUES (?, ?)';
@@ -262,7 +251,7 @@ async function executeSelectSqlQuery(pool, sql, res) {
                 res.status(500).send('Edit user error');
             }
         });
-
+        
         app.put('/topics/:id', async (req, res) => {
             const id = req.params.id;
             const topicName = req.body.topic_name;
@@ -281,7 +270,7 @@ async function executeSelectSqlQuery(pool, sql, res) {
                 res.status(500).send('Error updating topic');
             }
         });
-
+        
         app.put('/groups/:id', async (req, res) => {
             const id = req.params.id;
             const { group_name, course_id } = req.body;
@@ -356,7 +345,7 @@ async function executeSelectSqlQuery(pool, sql, res) {
                 res.status(500).send('Delete user error');
             }
         });
-
+        
         app.delete('/topics/:id', async (req, res) => {
             const id = req.params.id;
             const sql = 'DELETE FROM topics WHERE id = ?';
@@ -390,7 +379,7 @@ async function executeSelectSqlQuery(pool, sql, res) {
                 res.status(500).send('Error deleting group');
             }
         });
-
+        
         app.delete('/questions/:id', async (req, res) => {
             const id = req.params.id;
             const sql = 'DELETE FROM questions WHERE id = ?';
@@ -424,12 +413,41 @@ async function executeSelectSqlQuery(pool, sql, res) {
                 res.status(500).send('Error deleting answer');
             }
         });
+        
+        // Другие запросы к БД
+        app.get('/questions/:topicId', async (req, res) => {
+            const topicId = req.params.topicId;
+            const sql = 'SELECT * FROM questions WHERE topic_id = ?';
+            try {
+                const [rows] = await pool.execute(sql, [topicId]);
+                res.status(200).json(rows);
+            } catch (err) {
+                console.error(err);
+                res.status(500).send('Error retrieving questions');
+            }
+        });
+        
+        app.get('/members/:testId', async (req, res) => {
+            const testId = req.params.testId;
+            const sql = `SELECT tests_users.*, CONCAT(users.surname, ' ', users.name, ' ', users.patronymic) AS user_name, status_name
+                FROM tests_users
+                JOIN users ON tests_users.user_id = users.id
+                JOIN statuses ON tests_users.status_id = statuses.id
+                WHERE tests_users.test_id = ?;`;
+            try {
+                const [rows] = await pool.execute(sql, [testId]);
+                res.status(200).json(rows);
+            } catch (err) {
+                console.error(err);
+                res.status(500).send('Error retrieving members');
+            }
+        });
 
         // Обработка неопределенных URL-адресов
         app.use((req, res) => {
             res.status(404).send('Not found');
         });
-
+        
         // Слушатель порта
         app.listen(PORT, () => {
             console.log('Server is working on port: ', PORT);

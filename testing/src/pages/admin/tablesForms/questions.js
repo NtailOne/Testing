@@ -25,33 +25,41 @@ const Questions = () => {
     let tableName = 'Вопросы';
 
     useEffect(() => {
-        getQuestionsTable();
         getQuestions();
         getAnswers();
         getTopics();
+        getQuestionsTable();
     }, []);
 
     const getQuestionsTable = () => {
+        setLoading(true);
         axios.get(`/questions-table`).then((response) => {
             setQuestionsTable(response.data);
+            setLoading(false);
         });
     }
 
     const getQuestions = () => {
+        setLoading(true);
         axios.get(`/questions`).then((response) => {
             setQuestions(response.data);
+            setLoading(false);
         });
     }
 
     const getTopics = () => {
+        setLoading(true);
         axios.get(`/topics`).then((response) => {
             setOptions(response.data.map(topic => ({ value: topic.id, label: topic.topic_name })));
+            setLoading(false);
         });
     }
 
     const getAnswers = () => {
+        setLoading(true);
         axios.get(`/answers`).then((response) => {
             setAnswers(response.data);
+            setLoading(false);
         });
     }
 
@@ -131,6 +139,7 @@ const Questions = () => {
 
     const handleAddSubmit = (event) => {
         event.preventDefault();
+        setLoading(true);
 
         if (selectedOption === null) {
             alert('Выберите тему')
@@ -170,12 +179,14 @@ const Questions = () => {
             });
             handleModalCancel();
             getQuestionsTable();
-            setShowAddModal(false);
+            setLoading(false);
         });
+        setShowAddModal(false);
     };
 
     const handleEditSubmit = (event) => {
         event.preventDefault();
+        setLoading(true);
 
         if (selectedOption === null) {
             alert('Выберите тему')
@@ -223,20 +234,23 @@ const Questions = () => {
                 );
                 getQuestionsTable();
                 setModalAnswersToDelete([]);
-                setShowEditModal(false);
+                setLoading(false);
             }).catch((error) => {
                 console.log("Error updating answers: ", error);
             });
         }).catch((error) => {
             console.log("Error updating question: ", error);
         });
+        setShowEditModal(false);
     };
 
     const handleDelete = (id) => {
+        setLoading(true);
         axios.delete(`/questions/${id}`).then(() => {
             setQuestions(questions.filter(question => question.id !== id));
             setQuestionsTable(questionsTable.filter(question => question.id !== id));
             setAnswers(answers.filter(answer => answer.question_id !== id));
+            setLoading(false);
         });
     };
 

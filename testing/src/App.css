@@ -21,13 +21,6 @@
     font-weight: bold;
 }
 
-@media (min-width: 768px) {
-    .active {
-        transform: translateX(15px);
-        transition: transform 0.3s ease;
-    }
-}
-
 .active {
     color: #ffffff !important;
     text-shadow:
@@ -120,12 +113,6 @@
     width: 100% !important;
 }
 
-@media (min-width: 768px) {
-    .search-bar {
-        width: auto !important;
-    }
-}
-
 .correct-answer {
     font-weight: bold;
 }
@@ -145,4 +132,25 @@
 .form-check-input {
     width: 1.5em;
     height: 1.5em;
+}
+
+@media (min-width: 576px) {
+    .modal-dialog {
+        max-width: 600px;
+    }
+
+    .members>.modal-dialog {
+        max-width: 900px;
+    }
+}
+
+@media (min-width: 768px) {
+    .active {
+        transform: translateX(15px);
+        transition: transform 0.3s ease;
+    }
+
+    .search-bar {
+        width: auto !important;
+    }
 }

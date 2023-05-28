@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Table, Button, Modal, Form } from 'react-bootstrap';
 import axios from 'axios';
 import DeleteItemConfirmation from '../../../components/DeleteConfirmation';
+import LoadingIndicator from '../../../components/LoadingIndicator';
 
 const Users = () => {
     const [usersTable, setUsersTable] = useState([]);
@@ -18,29 +19,56 @@ const Users = () => {
     const [selectedRoleId, setSelectedRoleId] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [searchColumn, setSearchColumn] = useState('surname');
+    const [loading, setLoading] = useState(false);
 
     const password_pattern = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])[a-zA-Z0-9]{8,}$/;
     let tableName = 'Пользователи';
 
     useEffect(() => {
+        getUsers();
+        getRoles();
+        getGroups();
+        getCourses();
         getUsersForTable();
-        axios.get(`/users`).then((response) => {
-            setUsers(response.data);
-        });
-        axios.get(`/roles`).then((response) => {
-            setRoles(response.data);
-        });
-        axios.get(`/courses`).then((response) => {
-            setCourses(response.data);
-        });
-        axios.get(`/groups`).then((response) => {
-            setGroups(response.data);
-        });
     }, []);
 
     const getUsersForTable = () => {
+        setLoading(true);
         axios.get(`/users-table`).then((response) => {
             setUsersTable(response.data);
+            setLoading(false);
+        });
+    };
+
+    const getUsers = () => {
+        setLoading(true);
+        axios.get(`/users`).then((response) => {
+            setUsers(response.data);
+            setLoading(false);
+        });
+    };
+
+    const getRoles = () => {
+        setLoading(true);
+        axios.get(`/roles`).then((response) => {
+            setRoles(response.data);
+            setLoading(false);
+        });
+    };
+
+    const getGroups = () => {
+        setLoading(true);
+        axios.get(`/groups`).then((response) => {
+            setGroups(response.data);
+            setLoading(false);
+        });
+    };
+
+    const getCourses = () => {
+        setLoading(true);
+        axios.get(`/courses`).then((response) => {
+            setCourses(response.data);
+            setLoading(false);
         });
     };
 
@@ -97,6 +125,7 @@ const Users = () => {
 
     const handleAddSubmit = (event) => {
         event.preventDefault();
+        setLoading(true);
 
         const form = event.target;
         const body = {
@@ -114,8 +143,9 @@ const Users = () => {
             axios.post(`/users`, body).then((response) => {
                 setUsers([...users, response.data.user]);
                 getUsersForTable();
-                setShowAddModal(false);
+                setLoading(false);
             });
+            setShowAddModal(false);
         } else {
             alert(`Неверный пароль.
             \nДлина пароля должна быть не меньше 8 символов.
@@ -125,6 +155,7 @@ const Users = () => {
 
     const handleEditSubmit = (event) => {
         event.preventDefault();
+        setLoading(true);
 
         const form = event.target;
         const body = {
@@ -146,8 +177,9 @@ const Users = () => {
                     )
                 );
                 getUsersForTable();
-                setShowEditModal(false);
+                setLoading(false);
             });
+            setShowEditModal(false);
         } else {
             alert(`Неверный пароль.
             \nДлина пароля должна быть не меньше 8 символов.
@@ -156,9 +188,11 @@ const Users = () => {
     };
 
     const handleDelete = (id) => {
+        setLoading(true);
         axios.delete(`/users/${id}`).then(() => {
             setUsersTable(usersTable.filter((user) => user.id !== id));
             setUsers(users.filter((user) => user.id !== id));
+            setLoading(false);
         });
     };
 
@@ -188,7 +222,7 @@ const Users = () => {
                 </Button>
             </div>
 
-            <div className='table-responsive'>
+            {loading ? <LoadingIndicator /> : <div className='table-responsive'>
                 <Table bordered hover className='bg-white text-black'>
                     <thead>
                         <tr>
@@ -223,7 +257,7 @@ const Users = () => {
                         ))}
                     </tbody>
                 </Table>
-            </div>
+            </div>}
 
             <Modal show={showAddModal} onHide={handleModalCancel}>
                 <Form onSubmit={handleAddSubmit}>

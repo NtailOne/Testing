@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Table, Button, Modal, Form } from 'react-bootstrap';
 import axios from 'axios';
 import DeleteItemConfirmation from '../../../components/DeleteConfirmation';
+import LoadingIndicator from '../../../components/LoadingIndicator';
 
 const Groups = () => {
     const [groupsTable, setGroupsTable] = useState([]);
@@ -12,17 +13,14 @@ const Groups = () => {
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [loading, setLoading] = useState(false);
 
     let tableName = 'Группы';
 
     useEffect(() => {
+        getCourses();
+        getGroups();
         getGroupsForTable();
-        axios.get(`/groups`).then((response) => {
-            setGroups(response.data);
-        });
-        axios.get(`/courses`).then((response) => {
-            setCourses(response.data);
-        });
     }, []);
 
     const handleSearch = (event) => {
@@ -36,8 +34,26 @@ const Groups = () => {
     });
 
     const getGroupsForTable = () => {
+        setLoading(true);
         axios.get(`/groups-table`).then((response) => {
             setGroupsTable(response.data);
+            setLoading(false);
+        });
+    };
+
+    const getGroups = () => {
+        setLoading(true);
+        axios.get(`/groups`).then((response) => {
+            setGroups(response.data);
+            setLoading(false);
+        });
+    };
+
+    const getCourses = () => {
+        setLoading(true);
+        axios.get(`/courses`).then((response) => {
+            setCourses(response.data);
+            setLoading(false);
         });
     };
 
@@ -64,6 +80,7 @@ const Groups = () => {
 
     const handleAddSubmit = (event) => {
         event.preventDefault();
+        setLoading(true);
 
         const form = event.target;
         const body = {
@@ -74,12 +91,14 @@ const Groups = () => {
         axios.post(`/groups`, body).then((response) => {
             setGroups([...groups, response.data]);
             getGroupsForTable();
-            setShowAddModal(false);
+            setLoading(false);
         });
+        setShowAddModal(false);
     };
 
     const handleEditSubmit = (event) => {
         event.preventDefault();
+        setLoading(true);
 
         const form = event.target;
         const body = {
@@ -94,14 +113,17 @@ const Groups = () => {
                 )
             );
             getGroupsForTable();
-            setShowEditModal(false);
+            setLoading(false);
         });
+        setShowEditModal(false);
     };
 
     const handleDelete = (id) => {
+        setLoading(true);
         axios.delete(`/groups/${id}`).then(() => {
             setGroupsTable(groupsTable.filter((group) => group.id !== id));
             setGroups(groups.filter((group) => group.id !== id));
+            setLoading(false);
         });
     };
 
@@ -123,7 +145,7 @@ const Groups = () => {
                 </Button>
             </div>
 
-            <div className='table-responsive'>
+            {loading ? <LoadingIndicator /> : <div className='table-responsive'>
                 <Table hover bordered className='bg-white text-black'>
                     <thead>
                         <tr>
@@ -152,7 +174,7 @@ const Groups = () => {
                         ))}
                     </tbody>
                 </Table>
-            </div>
+            </div>}
 
             <Modal show={showAddModal} onHide={handleModalCancel}>
                 <Form onSubmit={handleAddSubmit}>

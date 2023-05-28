@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Table, Button, Modal, Form } from 'react-bootstrap';
 import axios from 'axios';
 import DeleteItemConfirmation from '../../../components/DeleteConfirmation';
+import LoadingIndicator from '../../../components/LoadingIndicator';
 
 const Topics = () => {
     const [topics, setTopics] = useState([]);
@@ -11,12 +12,15 @@ const Topics = () => {
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [loading, setLoading] = useState(false);
 
     let tableName = 'Темы';
 
     useEffect(() => {
+        setLoading(true);
         axios.get(`/topics`).then((response) => {
             setTopics(response.data);
+            setLoading(false);
         });
     }, []);
 
@@ -40,15 +44,18 @@ const Topics = () => {
     };
 
     const handleShowQuestionsModal = (topic) => {
+        setLoading(true);
         setSelectedTopic(topic);
         axios.get(`/questions/${topic.id}`).then((response) => {
             setQuestions(response.data);
-            setShowQuestionsModal(true);
+            setLoading(false);
         });
+        setShowQuestionsModal(true);
     };
 
     const handleAddSubmit = (event) => {
         event.preventDefault();
+        setLoading(true);
 
         const form = event.target;
         const body = {
@@ -57,12 +64,14 @@ const Topics = () => {
 
         axios.post(`/topics`, body).then((response) => {
             setTopics([...topics, response.data]);
+            setLoading(false);
         });
         setShowAddModal(false);
     };
 
     const handleEditSubmit = (event) => {
         event.preventDefault();
+        setLoading(true);
 
         const form = event.target;
         const body = {
@@ -75,19 +84,24 @@ const Topics = () => {
                     topic.id === selectedTopic.id ? { ...topic, ...body } : topic
                 )
             );
-            setShowEditModal(false);
+            setLoading(false);
         });
+        setShowEditModal(false);
     };
 
     const handleDelete = (id) => {
+        setLoading(true);
         axios.delete(`/topics/${id}`).then(() => {
             setTopics(topics.filter((topic) => topic.id !== id));
+            setLoading(false);
         });
     };
 
     const handleDeleteQuestion = (id) => {
+        setLoading(true);
         axios.delete(`/questions/${id}`).then(() => {
             setQuestions(questions.filter((question) => question.id !== id));
+            setLoading(false);
         });
     };
 
@@ -109,7 +123,7 @@ const Topics = () => {
                 </Button>
             </div>
 
-            <div className='table-responsive'>
+            {loading ? <LoadingIndicator /> : <div className='table-responsive'>
                 <Table bordered hover className='bg-white text-black'>
                     <thead>
                         <tr>
@@ -142,7 +156,7 @@ const Topics = () => {
                         ))}
                     </tbody>
                 </Table>
-            </div>
+            </div>}
 
             <Modal show={showAddModal} onHide={() => setShowAddModal(false)}>
                 <Form onSubmit={handleAddSubmit}>
@@ -194,7 +208,7 @@ const Topics = () => {
                         <Modal.Title>{selectedTopic.topic_name}</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
-                        <div className='table-responsive'>
+                        {loading ? <LoadingIndicator color='black' /> : <div className='table-responsive'>
                             <Table bordered hover className='bg-white text-black'>
                                 <thead>
                                     <tr>
@@ -206,7 +220,7 @@ const Topics = () => {
                                     {questions.map((question) => (
                                         <tr key={question.id}>
                                             <td>{question.question_body}</td>
-                                            <td className='d-flex flex-wrap justify-content-end gap-2'>
+                                            <td className='d-flex flex-column justify-content-end gap-2'>
                                                 <DeleteItemConfirmation
                                                     onDelete={() => handleDeleteQuestion(question.id)}
                                                 />
@@ -215,7 +229,7 @@ const Topics = () => {
                                     ))}
                                 </tbody>
                             </Table>
-                        </div>
+                        </div>}
                     </Modal.Body>
                 </Form>
             </Modal>

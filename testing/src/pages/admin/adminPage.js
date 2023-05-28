@@ -7,7 +7,7 @@ import Groups from './tablesForms/groups';
 import Topics from './tablesForms/topics';
 import Questions from './tablesForms/questions';
 import Tests from './tablesForms/tests';
-// import Statistics from './tablesForms/statistics';
+import Statistics from './tablesForms/statistics';
 
 const AdminPage = () => {
     const { setAdminLogged } = useContext(Context);
@@ -50,10 +50,9 @@ const AdminPage = () => {
         selectedComponent = <Questions />;
     } else if (selectedType === 'tests') {
         selectedComponent = <Tests />;
-    } 
-    // else if (selectedType === 'statistics') {
-    //     selectedComponent = <Statistics />;
-    // }
+    } else if (selectedType === 'statistics') {
+        selectedComponent = <Statistics />;
+    }
 
     return (
         <div>
