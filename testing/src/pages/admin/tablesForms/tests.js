@@ -116,8 +116,11 @@ const Tests = () => {
         return value && value.toString().toLowerCase().includes(term);
     });
 
-    const handleModalCancel = () => {
+    const addMember = (category) => {
+        setMembers([...members, modalAnswer]);
+    };
 
+    const handleModalCancel = () => {
         setShowAddModal(false);
         setShowEditModal(false);
         setShowMembersModal(false);
@@ -142,16 +145,16 @@ const Tests = () => {
         event.preventDefault();
         setLoading(true);
 
-        // const form = event.target;
-        // const body = {
-        //     title: form.title.value,
-        //     description: form.description.value,
-        // };
+        const form = event.target;
+        const body = {
+            title: form.title.value,
+            description: form.description.value,
+        };
 
-        // axios.post(`/tests`, body).then((response) => {
-        //     setTests([...tests, response.data]);
-        //     setShowAddModal(false);
-        // });
+        axios.post(`/tests`, body).then((response) => {
+            setTests([...tests, response.data]);
+            setShowAddModal(false);
+        });
         setLoading(false);
     };
 
@@ -159,56 +162,35 @@ const Tests = () => {
         event.preventDefault();
         setLoading(true);
 
-        // const form = event.target;
-        // const body = {
-        //     title: form.title.value,
-        //     description: form.description.value,
-        // };
+        const form = event.target;
+        const body = {
+            title: form.title.value,
+            description: form.description.value,
+        };
 
-        // axios.put(`/tests/${selectedTest.id}`, body).then(() => {
-        //     setTests(
-        //         tests.map((test) =>
-        //             test.id === selectedTest.id ? { ...test, ...body } : test
-        //         )
-        //     );
-        //     setShowEditModal(false);
-        // });
-        setLoading(false);
+        axios.put(`/tests/${selectedTest.id}`, body).then(() => {
+            setTests(
+                tests.map((test) =>
+                    test.id === selectedTest.id ? { ...test, ...body } : test
+                )
+            );
+            setLoading(false);
+        });
+        setShowEditModal(false);
     };
 
     const handleDelete = (id) => {
         setLoading(true);
-        // axios.delete(`/tests/${id}`).then(() => {
-        //     setTests(tests.filter((test) => test.id !== id));
-        // });
-        setLoading(false);
+        axios.delete(`/tests/${id}`).then(() => {
+            setTests(tests.filter((test) => test.id !== id));
+            setLoading(false);
+        });
     };
 
     const handleDeleteMember = (id) => {
         setLoading(true);
 
         setLoading(false);
-    };
-
-    const [testName, setTestName] = useState('');
-    const [startTime, setStartTime] = useState('');
-    const [endTime, setEndTime] = useState('');
-    const [timeToPass, setTimeToPass] = useState('');
-    const [maxScore, setMaxScore] = useState('');
-    const [teacherName, setTeacherName] = useState('');
-
-    const handleSubmit = (event) => {
-        event.preventDefault();
-        const newTest = {
-            test_name: testName,
-            start_time: startTime,
-            end_time: endTime,
-            time_to_pass: timeToPass,
-            max_score: maxScore,
-            teacher_name: teacherName,
-        };
-        // onSubmit(newTest);
-        // onHide();
     };
 
     return (
@@ -295,32 +277,74 @@ const Tests = () => {
             <Modal show={showAddModal} onHide={handleModalCancel}>
                 <Form onSubmit={handleAddSubmit}>
                     <Modal.Header closeButton>
-                        <Modal.Title>Добавить элемент</Modal.Title>
+                        <Modal.Title>Добавить тест</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
-                        <Form.Group className="mb-3" controlId="testName">
+                        <Form.Group className="mb-3" controlId="test_name">
                             <Form.Label>Название теста</Form.Label>
-                            <Form.Control type="text" name="testName" placeholder="Введите название" required />
+                            <Form.Control type="text" name="test_name" placeholder="Введите название" required />
                         </Form.Group>
-                        <Form.Group className="mb-3" controlId="startTime">
+                        <Form.Group className="mb-3" controlId="start_time">
                             <Form.Label>Время начала</Form.Label>
-                            <Form.Control type="datetime-local" name="startTime" required />
+                            <Form.Control type="datetime-local" name="start_time" required />
                         </Form.Group>
-                        <Form.Group className="mb-3" controlId="endTime">
+                        <Form.Group className="mb-3" controlId="end_time">
                             <Form.Label>Время окончания</Form.Label>
-                            <Form.Control type="datetime-local" name="endTime" required />
+                            <Form.Control type="datetime-local" name="end_time" required />
                         </Form.Group>
-                        <Form.Group className="mb-3" controlId="timeToPass">
+                        <Form.Group className="mb-3" controlId="time_to_pass">
                             <Form.Label>Время на прохождение (в минутах)</Form.Label>
-                            <Form.Control type="number" name="timeToPass" placeholder="Введите время" required />
+                            <Form.Control type="number" name="time_to_pass" placeholder="Введите время" required />
                         </Form.Group>
-                        <Form.Group className="mb-3" controlId="maxScore">
+                        <Form.Group className="mb-3" controlId="max_score">
                             <Form.Label>Максимальный балл</Form.Label>
-                            <Form.Control type="number" name="maxScore" placeholder="Введите балл" required />
+                            <Form.Control type="number" name="max_score" placeholder="Введите балл" required />
                         </Form.Group>
-                        <Form.Group className="mb-3" controlId="countInStats">
-                            <Form.Check type="checkbox" name="countInStats" label="Учитывать результаты теста в статистике" />
+                        <Form.Group className="mb-3" controlId="count_in_stats">
+                            <Form.Check type="checkbox" name="count_in_stats" label="Учитывать результаты теста в статистике" />
                         </Form.Group>
+                        <div className='d-flex flex-wrap mb-1 mt-3 justify-content-between'>
+                            <Form.Label className='mb-1 mt-2'>Участники:</Form.Label>
+                            <Button variant="primary" onClick={addMember}>
+                                Добавить студента
+                            </Button>
+                        </div>
+                        <div className={`table-responsive ${members.length === 0 ? 'd-none' : ''}`}>
+                            <Table>
+                                <thead>
+                                    <tr>
+                                        <th>Участник</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {members.map((member) => (
+                                        <tr key={member.id} className="align-middle">
+                                            <td>
+                                                <Form.Group controlId={`member${member.id}`} className='d-flex justify-content-center'>
+                                                    <Form.Label className='mb-1 mt-2'>Тема</Form.Label>
+                                                    <Typeahead
+                                                        id="typeahead-members"
+                                                        options={options}
+                                                        defaultSelected={options.filter(option => option.value === selectedOption)}
+                                                        onChange={handleChange}
+                                                        labelKey="label"
+                                                        placeholder="Выберите тему"
+                                                        allowNew={false}
+                                                        required
+                                                    />
+                                                </Form.Group>
+                                            </td>
+                                            <td>
+                                                <DeleteItemConfirmation
+                                                    onDelete={() => handleDeleteMember(answer.id)}
+                                                />
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </Table>
+                        </div>
                     </Modal.Body>
                     <Modal.Footer>
                         <Button variant="secondary" onClick={handleModalCancel}>
@@ -336,7 +360,7 @@ const Tests = () => {
             <Modal show={showEditModal} onHide={handleModalCancel}>
                 <Form onSubmit={handleEditSubmit}>
                     <Modal.Header closeButton>
-                        <Modal.Title>Редактировать элемент</Modal.Title>
+                        <Modal.Title>Редактировать тест</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
                         <Form.Group className="mb-3" controlId="test_name">

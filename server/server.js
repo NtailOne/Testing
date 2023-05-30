@@ -146,7 +146,7 @@ async function executeSelectSqlQuery(pool, sql, res) {
                 JOIN users ON tests.teacher_id = users.id;`;
             await executeSelectSqlQuery(pool, sql, res);
         });
-        
+
         // Запросы на добавление записей в БД
         app.post('/users', async (req, res) => {
             const { role_id, email, password, surname, name, patronymic, course_id, group_id } = req.body;
@@ -181,7 +181,7 @@ async function executeSelectSqlQuery(pool, sql, res) {
                 res.status(500).send('Error adding topic');
             }
         });
-        
+
         app.post('/groups', async (req, res) => {
             const { group_name, course_id } = req.body;
             const sql = 'INSERT INTO courses_groups (group_name, course_id) VALUES (?, ?)';
@@ -195,7 +195,7 @@ async function executeSelectSqlQuery(pool, sql, res) {
                 res.status(500).send('Error adding group');
             }
         });
-        
+
         app.post('/questions', async (req, res) => {
             const { topic_id, question_body } = req.body;
             const sql = 'INSERT INTO questions (topic_id, question_body) VALUES (?, ?)';
@@ -221,6 +221,48 @@ async function executeSelectSqlQuery(pool, sql, res) {
             } catch (err) {
                 console.error(err);
                 res.status(500).send('Error adding answer');
+            }
+        });
+
+        app.post('/tests', async (req, res) => {
+            const { test_name, start_time, end_time, time_to_pass, max_score, teacher_id, count_in_stats } = req.body;
+            const sql = 'INSERT INTO tests (test_name, start_time, end_time, time_to_pass, max_score, teacher_id, count_in_stats) VALUES (?, ?, ?, ?, ?, ?, ?)';
+            try {
+                const [result] = await pool.execute(sql, [test_name, start_time, end_time, time_to_pass, max_score, teacher_id, count_in_stats]);
+                const test = { id: result.insertId, test_name, start_time, end_time, time_to_pass, max_score, teacher_id, count_in_stats };
+                console.log(`Added test with id ${result.insertId}`);
+                res.status(200).json(test);
+            } catch (err) {
+                console.error(err);
+                res.status(500).send('Error adding test');
+            }
+        });
+
+        app.post('/tests_questions', async (req, res) => {
+            const { test_id, question_id } = req.body;
+            const sql = 'INSERT INTO tests_questions (test_id, question_id) VALUES (?, ?)';
+            try {
+                const [result] = await pool.execute(sql, [test_id, question_id]);
+                const testsQuestions = { id: result.insertId, test_id, question_id };
+                console.log(`Added new tests_questions with id ${result.insertId}`);
+                res.status(200).json(testsQuestions);
+            } catch (err) {
+                console.error(err);
+                res.status(500).send('Error adding tests_questions');
+            }
+        });
+
+        app.post('/tests_users', async (req, res) => {
+            const { test_id, user_id, grade, time_spent, status_id } = req.body;
+            const sql = 'INSERT INTO tests_users (test_id, user_id, grade, time_spent, status_id) VALUES (?, ?, ?, ?, ?)';
+            try {
+                const [result] = await pool.execute(sql, [test_id, user_id, grade, time_spent, status_id]);
+                const testsUsers = { id: result.insertId, test_id, user_id, grade, time_spent, status_id };
+                console.log(`Added new tests_users with id ${result.insertId}`);
+                res.status(200).json(testsUsers);
+            } catch (err) {
+                console.error(err);
+                res.status(500).send('Error adding tests_users');
             }
         });
 
@@ -251,7 +293,7 @@ async function executeSelectSqlQuery(pool, sql, res) {
                 res.status(500).send('Edit user error');
             }
         });
-        
+
         app.put('/topics/:id', async (req, res) => {
             const id = req.params.id;
             const topicName = req.body.topic_name;
@@ -270,7 +312,7 @@ async function executeSelectSqlQuery(pool, sql, res) {
                 res.status(500).send('Error updating topic');
             }
         });
-        
+
         app.put('/groups/:id', async (req, res) => {
             const id = req.params.id;
             const { group_name, course_id } = req.body;
@@ -328,6 +370,63 @@ async function executeSelectSqlQuery(pool, sql, res) {
             }
         });
 
+        app.put('/tests/:id', async (req, res) => {
+            const id = req.params.id;
+            const { test_name, start_time, end_time, time_to_pass, max_score, teacher_id, count_in_stats } = req.body;
+            const sql = 'UPDATE tests SET test_name = ?, start_time = ?, end_time = ?, time_to_pass = ?, max_score = ?, teacher_id = ?, count_in_stats = ? WHERE id = ?';
+            try {
+                const [result] = await pool.execute(sql, [test_name, start_time, end_time, time_to_pass, max_score, teacher_id, count_in_stats, id]);
+                if (result.affectedRows > 0) {
+                    console.log(`Updated test with id ${id}`);
+                    const test = { id: Number(id), test_name, start_time, end_time, time_to_pass, max_score, teacher_id, count_in_stats };
+                    res.status(200).json(test);
+                } else {
+                    res.status(404).send('Test not found');
+                }
+            } catch (err) {
+                console.error(err);
+                res.status(500).send('Error updating test');
+            }
+        });
+
+        app.put('/tests_questions/:id', async (req, res) => {
+            const id = req.params.id;
+            const { test_id, question_id } = req.body;
+            const sql = 'UPDATE tests_questions SET test_id = ?, question_id = ? WHERE id = ?';
+            try {
+                const [result] = await pool.execute(sql, [test_id, question_id, id]);
+                if (result.affectedRows > 0) {
+                    console.log(`Updated tests_questions with id ${id}`);
+                    const testsQuestions = { id: Number(id), test_id, question_id };
+                    res.status(200).json(testsQuestions);
+                } else {
+                    res.status(404).send('Tests-Questions not found');
+                }
+            } catch (err) {
+                console.error(err);
+                res.status(500).send('Error updating tests-questions');
+            }
+        });
+
+        app.put('/tests_users/:id', async (req, res) => {
+            const id = req.params.id;
+            const { test_id, user_id, grade, time_spent, status_id } = req.body;
+            constsql = 'UPDATE tests_users SET test_id = ?, user_id = ?, grade = ?, time_spent = ?, status_id = ? WHERE id = ?';
+            try {
+                const [result] = await pool.execute(sql, [test_id, user_id, grade, time_spent, status_id, id]);
+                if (result.affectedRows > 0) {
+                    console.log(`Updated tests_users with id ${id}`);
+                    const testsUsers = { id: Number(id), test_id, user_id, grade, time_spent, status_id };
+                    res.status(200).json(testsUsers);
+                } else {
+                    res.status(404).send('Tests-Users not found');
+                }
+            } catch (err) {
+                console.error(err);
+                res.status(500).send('Error updating tests-users');
+            }
+        });
+
         // Запросы на удаление записей из БД
         app.delete('/users/:id', async (req, res) => {
             const id = req.params.id;
@@ -345,7 +444,7 @@ async function executeSelectSqlQuery(pool, sql, res) {
                 res.status(500).send('Delete user error');
             }
         });
-        
+
         app.delete('/topics/:id', async (req, res) => {
             const id = req.params.id;
             const sql = 'DELETE FROM topics WHERE id = ?';
@@ -379,7 +478,7 @@ async function executeSelectSqlQuery(pool, sql, res) {
                 res.status(500).send('Error deleting group');
             }
         });
-        
+
         app.delete('/questions/:id', async (req, res) => {
             const id = req.params.id;
             const sql = 'DELETE FROM questions WHERE id = ?';
@@ -413,7 +512,58 @@ async function executeSelectSqlQuery(pool, sql, res) {
                 res.status(500).send('Error deleting answer');
             }
         });
-        
+
+        app.delete('/tests/:id', async (req, res) => {
+            const id = req.params.id;
+            const sql = 'DELETE FROM tests WHERE id = ?';
+            try {
+                const [result] = await pool.execute(sql, [id]);
+                if (result.affectedRows > 0) {
+                    console.log(`Deleted test with id ${id}`);
+                    res.status(200).send(`Test with id ${id} deleted`);
+                } else {
+                    res.status(404).send('Test not found');
+                }
+            } catch (err) {
+                console.error(err);
+                res.status(500).send('Error deleting test');
+            }
+        });
+
+        app.delete('/tests_questions/:id', async (req, res) => {
+            const id = req.params.id;
+            const sql = 'DELETE FROM tests_questions WHERE id = ?';
+            try {
+                const [result] = await pool.execute(sql, [id]);
+                if (result.affectedRows > 0) {
+                    console.log(`Deleted tests_questions with id ${id}`);
+                    res.status(200).send(`Tests-Questions with id ${id} deleted`);
+                } else {
+                    res.status(404).send('Tests-Questions not found');
+                }
+            } catch (err) {
+                console.error(err);
+                res.status(500).send('Error deleting tests-questions');
+            }
+        });
+
+        app.delete('/tests_users/:id', async (req, res) => {
+            const id = req.params.id;
+            const sql = 'DELETE FROM tests_users WHERE id = ?';
+            try {
+                const [result] = await pool.execute(sql, [id]);
+                if (result.affectedRows > 0) {
+                    console.log(`Deleted tests_users with id ${id}`);
+                    res.status(200).send(`Tests-Users with id ${id} deleted`);
+                } else {
+                    res.status(404).send('Tests-Users not found');
+                }
+            } catch (err) {
+                console.error(err);
+                res.status(500).send('Error deleting tests-users');
+            }
+        });
+
         // Другие запросы к БД
         app.get('/questions/:topicId', async (req, res) => {
             const topicId = req.params.topicId;
@@ -426,7 +576,7 @@ async function executeSelectSqlQuery(pool, sql, res) {
                 res.status(500).send('Error retrieving questions');
             }
         });
-        
+
         app.get('/members/:testId', async (req, res) => {
             const testId = req.params.testId;
             const sql = `SELECT tests_users.*, CONCAT(users.surname, ' ', users.name, ' ', users.patronymic) AS user_name, status_name
@@ -447,7 +597,7 @@ async function executeSelectSqlQuery(pool, sql, res) {
         app.use((req, res) => {
             res.status(404).send('Not found');
         });
-        
+
         // Слушатель порта
         app.listen(PORT, () => {
             console.log('Server is working on port: ', PORT);
@@ -457,5 +607,4 @@ async function executeSelectSqlQuery(pool, sql, res) {
         console.error(e);
         process.exit(1);
     }
-
 })();
