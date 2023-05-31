@@ -143,12 +143,16 @@ const Tests = () => {
     });
 
     const handleStudentChooseOptionChange = (event) => {
+        setSelectedCourse({});
+        setSelectedGroup({});
         setMembers([]);
         setSelectedStudentChooseOption(event.target.value);
     };
 
     const handleCourseChange = (event) => {
-        setSelectedCourse(event.target.value);
+        const courseNum = event.target.value;
+        const course = courses.find(c => c.course_num == courseNum);
+        setSelectedCourse(course);
     };
 
     const handleGroupChange = (event) => {
@@ -249,16 +253,28 @@ const Tests = () => {
 
         const form = event.target;
         const body = {
-            title: form.title.value,
-            description: form.description.value,
+            test_name: form.test_name.value,
+            start_time: form.start_time.value,
+            end_time: form.end_time.value,
+            time_to_pass: form.time_to_pass.value,
+            max_score: form.max_score.value,
+            count_in_stats: form.count_in_stats.checked,
+            course_id: selectedCourse.id,
+            group_id: selectedGroup,
+            members: selectedMembers,
+            questions: selectedQuestions
         };
 
         axios.post(`/tests`, body).then((response) => {
             setTests([...tests, response.data]);
             setShowAddModal(false);
+        }).catch((error) => {
+            console.error(error);
         });
+
         setLoading(false);
     };
+
 
     const handleEditSubmit = (event) => {
         event.preventDefault();
@@ -429,7 +445,7 @@ const Tests = () => {
                         <div className='d-flex flex-wrap gap-3'>
                             <Form.Group controlId='course' className={`${selectedStudentChooseOption !== 'Отдельно' ? 'd-flex' : 'd-none'} col-12 col-sm flex-wrap mb-3 justify-content-between`}>
                                 <Form.Label>Выберите курс</Form.Label>
-                                <Form.Select value={selectedCourse} onChange={handleCourseChange}>
+                                <Form.Select value={selectedCourse.id} onChange={handleCourseChange}>
                                     <option value='' disabled>Выберите курс</option>
                                     {courses.map((course) => (
                                         <option key={course.id} value={course.id}>
@@ -442,11 +458,12 @@ const Tests = () => {
                                 <Form.Label>Выберите группу</Form.Label>
                                 <Form.Select value={selectedGroup} onChange={handleGroupChange}>
                                     <option value='' disabled>Выберите группу</option>
-                                    {groups.map((group) => (
-                                        <option key={group.id} value={group.id}>
-                                            {group.group_name}
-                                        </option>
-                                    )).filter(group => group.course_id === selectedCourse)}
+                                    {groups.filter(group => group.course_id === selectedCourse.id)
+                                        .map((group) => (
+                                            <option key={group.id} value={group.id}>
+                                                {group.group_name}
+                                            </option>
+                                        ))}
                                 </Form.Select>
                             </Form.Group>
                         </div>
