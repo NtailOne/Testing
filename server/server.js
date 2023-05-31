@@ -70,7 +70,7 @@ async function executeSelectSqlQuery(pool, sql, res) {
 
         // Запросы на получение всех записей таблиц БД
         app.get('/users', async (req, res) => {
-            const sql = 'SELECT * FROM users';
+            const sql = 'SELECT id, role_id, email, surname, name, patronymic, course_id, group_id FROM users';
             await executeSelectSqlQuery(pool, sql, res);
         });
 

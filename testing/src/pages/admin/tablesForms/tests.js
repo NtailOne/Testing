@@ -10,11 +10,19 @@ const Tests = () => {
     const [testsTable, setTestsTable] = useState([]);
     const [tests, setTests] = useState([]);
     const [questions, setQuestions] = useState([]);
+    const [modalQuestions, setModalQuestions] = useState([]);
+    const [selectedQuestions, setSelectedQuestions] = useState([]);
+    const [nextQuestionId, setNextQuestionId] = useState(-1);
     const [topics, setTopics] = useState([]);
     const [users, setUsers] = useState([]);
-    const [groups, setGroups] = useState([]);
     const [courses, setCourses] = useState([]);
+    const [selectedCourse, setSelectedCourse] = useState({});
+    const [groups, setGroups] = useState([]);
+    const [selectedGroup, setSelectedGroup] = useState({});
+    const [roles, setRoles] = useState({});
     const [members, setMembers] = useState([]);
+    const [nextMemberId, setNextMemberId] = useState(-1);
+    const [selectedMembers, setSelectedMembers] = useState([]);
     const [selectedTest, setSelectedTest] = useState({});
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -22,12 +30,19 @@ const Tests = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [searchColumn, setSearchColumn] = useState('test_name');
     const [loading, setLoading] = useState(false);
+    const [selectedStudentChooseOption, setSelectedStudentChooseOption] = useState('Курс');
 
     let tableName = 'Тесты';
 
     useEffect(() => {
         getTests();
         getTestsTable();
+        getRoles();
+        getUsers();
+        getCourses();
+        getGroups();
+        getTopics();
+        getQuestions();
     }, []);
 
     const getTestsTable = () => {
@@ -40,7 +55,7 @@ const Tests = () => {
             })));
             setLoading(false);
         });
-    }
+    };
 
     const getTests = () => {
         setLoading(true);
@@ -52,15 +67,7 @@ const Tests = () => {
             })));
             setLoading(false);
         });
-    }
-
-    const getQuestions = () => {
-        setLoading(true);
-        axios.get(`/questions`).then((response) => {
-            setQuestions(response.data);
-            setLoading(false);
-        });
-    }
+    };
 
     const getTopics = () => {
         setLoading(true);
@@ -68,7 +75,15 @@ const Tests = () => {
             setTopics(response.data);
             setLoading(false);
         });
-    }
+    };
+
+    const getQuestions = () => {
+        setLoading(true);
+        axios.get(`/questions`).then((response) => {
+            setQuestions(response.data);
+            setLoading(false);
+        });
+    };
 
     const getUsers = () => {
         setLoading(true);
@@ -76,7 +91,7 @@ const Tests = () => {
             setUsers(response.data);
             setLoading(false);
         });
-    }
+    };
 
     const getGroups = () => {
         setLoading(true);
@@ -84,7 +99,7 @@ const Tests = () => {
             setGroups(response.data);
             setLoading(false);
         });
-    }
+    };
 
     const getCourses = () => {
         setLoading(true);
@@ -92,7 +107,18 @@ const Tests = () => {
             setCourses(response.data);
             setLoading(false);
         });
-    }
+    };
+
+    const getRoles = () => {
+        setLoading(true);
+        axios.get(`/roles`).then((response) => {
+            const data = response.data;
+            const teacherRoleId = data.find(role => role.role_name === 'Преподаватель').id;
+            const studentRoleId = data.find(role => role.role_name === 'Студент').id;
+            setRoles({ teacher: teacherRoleId, student: studentRoleId });
+            setLoading(false);
+        });
+    };
 
     const getMembers = (testId) => {
         setLoading(true);
@@ -100,7 +126,7 @@ const Tests = () => {
             setMembers(response.data);
             setLoading(false);
         });
-    }
+    };
 
     const handleSearch = (event) => {
         setSearchTerm(event.target.value);
@@ -116,11 +142,87 @@ const Tests = () => {
         return value && value.toString().toLowerCase().includes(term);
     });
 
-    const addMember = (category) => {
-        setMembers([...members, modalAnswer]);
+    const handleStudentChooseOptionChange = (event) => {
+        setMembers([]);
+        setSelectedStudentChooseOption(event.target.value);
+    };
+
+    const handleCourseChange = (event) => {
+        setSelectedCourse(event.target.value);
+    };
+
+    const handleGroupChange = (event) => {
+        setSelectedGroup(event.target.value);
+    };
+
+    const addMember = (user_id = null) => {
+        const newMember = {
+            id: nextMemberId,
+            user_id
+        };
+        setMembers([...members, newMember]);
+        setNextMemberId(prev => prev - 1);
+    };
+
+    const handleMemberChange = (selected, id) => {
+        const selectedUser = selected[0];
+        if (selectedMembers.includes(selectedUser.id)) {
+            return;
+        }
+        setSelectedMembers([...selectedMembers, selectedUser.id]);
+        setMembers(
+            members.map((member) =>
+                member.id === id
+                    ? { ...member, user_id: selectedUser.id }
+                    : member
+            )
+        );
+    };
+
+    const handleDeleteMember = (selectedMember) => {
+        setMembers(members.filter((member) => member.id !== selectedMember.id));
+        setSelectedMembers(selectedMembers.filter((member) => member !== selectedMember.user_id));
+    };
+
+    const addQuestion = (question_body = '') => {
+        const newQuestion = {
+            id: nextQuestionId,
+            question_body
+        };
+        setModalQuestions([...modalQuestions, newQuestion]);
+        setNextQuestionId(prev => prev - 1);
+    };
+
+    const handleQuestionChange = (selected, id) => {
+        const selectedQuestion = selected[0];
+        if (selectedQuestions.includes(selectedQuestion.id)) {
+            return;
+        }
+        setSelectedQuestions([...selectedQuestions, selectedQuestion.id]);
+        setModalQuestions(
+            modalQuestions.map((question) =>
+                question.id === id
+                    ? { ...question, question_body: selectedQuestion.question_body }
+                    : question
+            )
+        );
+    };
+
+    const handleDeleteQuestion = (selectedQuestion) => {
+        setModalQuestions(modalQuestions.filter((question) => question.id !== selectedQuestion.id));
+        setSelectedQuestions(selectedQuestions.filter((question) => question !== selectedQuestion.question_body));
     };
 
     const handleModalCancel = () => {
+        setSelectedStudentChooseOption('Курс');
+        setSelectedCourse({});
+        setSelectedGroup({});
+        setNextMemberId(-1);
+        setMembers([]);
+        setSelectedMembers([]);
+        setNextQuestionId(-1);
+        setModalQuestions([]);
+        setSelectedQuestions([]);
         setShowAddModal(false);
         setShowEditModal(false);
         setShowMembersModal(false);
@@ -187,14 +289,8 @@ const Tests = () => {
         });
     };
 
-    const handleDeleteMember = (id) => {
-        setLoading(true);
-
-        setLoading(false);
-    };
-
     return (
-        <div className="mt-4 mx-0 mx-md-3">
+        <div className='mt-4 mx-0 mx-md-3'>
             <div className='d-flex flex-wrap justify-content-between mb-4 gap-4'>
                 <h1 className='text-white'>{tableName}</h1>
                 <div className='d-flex flex-wrap gap-2 col-12 col-md-auto'>
@@ -211,7 +307,7 @@ const Tests = () => {
                         placeholder='Поиск по критерию'
                     />
                 </div>
-                <Button className='col-12 col-md-2' variant="primary" onClick={handleShowAddModal}>
+                <Button className='col-12 col-md-2' variant='primary' onClick={handleShowAddModal}>
                     Добавить
                 </Button>
             </div>
@@ -239,7 +335,7 @@ const Tests = () => {
                                 <td>{test.teacher_name}</td>
                                 <td>
                                     <Button
-                                        variant="secondary"
+                                        variant='secondary'
                                         onClick={() => handleShowMembersModal(test)}
                                     >
                                         Просмотр
@@ -247,19 +343,19 @@ const Tests = () => {
                                 </td>
                                 <td className='d-flex flex-column justify-content-center gap-2'>
                                     <Button
-                                        variant="success"
+                                        variant='success'
                                         onClick={() => handleShowEditModal(test)}
                                     >
                                         Новый
                                     </Button>
                                     <Button
-                                        variant="dark"
+                                        variant='dark'
                                         onClick={() => handleShowEditModal(test)}
                                     >
                                         Остановить
                                     </Button>
                                     <Button
-                                        variant="warning"
+                                        variant='warning'
                                         onClick={() => handleShowEditModal(test)}
                                     >
                                         Редактировать
@@ -280,64 +376,155 @@ const Tests = () => {
                         <Modal.Title>Добавить тест</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
-                        <Form.Group className="mb-3" controlId="test_name">
+                        <Form.Group className='mb-3' controlId='test_name'>
                             <Form.Label>Название теста</Form.Label>
-                            <Form.Control type="text" name="test_name" placeholder="Введите название" required />
+                            <Form.Control type='text' name='test_name' placeholder='Введите название' required />
                         </Form.Group>
-                        <Form.Group className="mb-3" controlId="start_time">
-                            <Form.Label>Время начала</Form.Label>
-                            <Form.Control type="datetime-local" name="start_time" required />
+                        <div className='d-flex flex-wrap gap-3 mb-3'>
+                            <Form.Group className='col-12 col-sm' controlId='start_time'>
+                                <Form.Label>Время начала</Form.Label>
+                                <Form.Control type='datetime-local' name='start_time' required />
+                            </Form.Group>
+                            <Form.Group className='col-12 col-sm' controlId='end_time'>
+                                <Form.Label>Время окончания</Form.Label>
+                                <Form.Control type='datetime-local' name='end_time' required />
+                            </Form.Group>
+                        </div>
+                        <div className='d-flex flex-wrap gap-3 mb-3'>
+                            <Form.Group className='col-12 col-sm' controlId='time_to_pass'>
+                                <Form.Label>Время на прохождение (в минутах)</Form.Label>
+                                <Form.Control type='number' name='time_to_pass' placeholder='Введите время' required />
+                            </Form.Group>
+                            <Form.Group className='col-12 col-sm' controlId='max_score'>
+                                <Form.Label>Максимальный балл</Form.Label>
+                                <Form.Control type='number' name='max_score' placeholder='Введите балл' required />
+                            </Form.Group>
+                        </div>
+                        <Form.Group className='mb-3' controlId='count_in_stats'>
+                            <Form.Check type='checkbox' name='count_in_stats' label='Учитывать результаты теста в статистике' />
                         </Form.Group>
-                        <Form.Group className="mb-3" controlId="end_time">
-                            <Form.Label>Время окончания</Form.Label>
-                            <Form.Control type="datetime-local" name="end_time" required />
-                        </Form.Group>
-                        <Form.Group className="mb-3" controlId="time_to_pass">
-                            <Form.Label>Время на прохождение (в минутах)</Form.Label>
-                            <Form.Control type="number" name="time_to_pass" placeholder="Введите время" required />
-                        </Form.Group>
-                        <Form.Group className="mb-3" controlId="max_score">
-                            <Form.Label>Максимальный балл</Form.Label>
-                            <Form.Control type="number" name="max_score" placeholder="Введите балл" required />
-                        </Form.Group>
-                        <Form.Group className="mb-3" controlId="count_in_stats">
-                            <Form.Check type="checkbox" name="count_in_stats" label="Учитывать результаты теста в статистике" />
-                        </Form.Group>
-                        <div className='d-flex flex-wrap mb-1 mt-3 justify-content-between'>
-                            <Form.Label className='mb-1 mt-2'>Участники:</Form.Label>
-                            <Button variant="primary" onClick={addMember}>
-                                Добавить студента
+                        <div className='d-flex flex-column flex-sm-row justify-content-between gap-3 mb-3'>
+                            <Form.Check
+                                type='radio'
+                                label='Курс'
+                                value='Курс'
+                                checked={selectedStudentChooseOption === 'Курс'}
+                                onChange={handleStudentChooseOptionChange}
+                            />
+                            <Form.Check
+                                type='radio'
+                                label='Группа'
+                                value='Группа'
+                                checked={selectedStudentChooseOption === 'Группа'}
+                                onChange={handleStudentChooseOptionChange}
+                            />
+                            <Form.Check
+                                type='radio'
+                                label='Отдельно'
+                                value='Отдельно'
+                                checked={selectedStudentChooseOption === 'Отдельно'}
+                                onChange={handleStudentChooseOptionChange}
+                            />
+                        </div>
+                        <div className='d-flex flex-wrap gap-3'>
+                            <Form.Group controlId='course' className={`${selectedStudentChooseOption !== 'Отдельно' ? 'd-flex' : 'd-none'} col-12 col-sm flex-wrap mb-3 justify-content-between`}>
+                                <Form.Label>Выберите курс</Form.Label>
+                                <Form.Select value={selectedCourse} onChange={handleCourseChange}>
+                                    <option value='' disabled>Выберите курс</option>
+                                    {courses.map((course) => (
+                                        <option key={course.id} value={course.id}>
+                                            {course.course_num}
+                                        </option>
+                                    ))}
+                                </Form.Select>
+                            </Form.Group>
+                            <Form.Group controlId='group' className={`${selectedStudentChooseOption === 'Группа' ? 'd-flex' : 'd-none'} col-12 col-sm flex-wrap mb-3 justify-content-between`}>
+                                <Form.Label>Выберите группу</Form.Label>
+                                <Form.Select value={selectedGroup} onChange={handleGroupChange}>
+                                    <option value='' disabled>Выберите группу</option>
+                                    {groups.map((group) => (
+                                        <option key={group.id} value={group.id}>
+                                            {group.group_name}
+                                        </option>
+                                    )).filter(group => group.course_id === selectedCourse)}
+                                </Form.Select>
+                            </Form.Group>
+                        </div>
+                        <div className={`${selectedStudentChooseOption === 'Отдельно' ? 'd-block' : 'd-none'}`}>
+                            <div className='d-flex flex-wrap mb-3 justify-content-between'>
+                                <Form.Label>Участники:</Form.Label>
+                                <Button variant='primary' onClick={addMember}>
+                                    Добавить студента
+                                </Button>
+                            </div>
+                            <div className={`table-responsive ${members.length === 0 ? 'd-none' : ''}`}>
+                                <Table bordered hover>
+                                    <thead>
+                                        <tr>
+                                            <th>Участник</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {members.map((member) => (
+                                            <tr key={member.id} className='align-middle'>
+                                                <td>
+                                                    <Form.Group controlId={`member${member.id}`} className=''>
+                                                        <Typeahead
+                                                            id='typeahead-members'
+                                                            options={users.filter(user => user.role_id === roles.student && !selectedMembers.some(member => member === user.id))}
+                                                            onChange={(selected) => handleMemberChange(selected, member.id)}
+                                                            labelKey={option => `${option.surname} ${option.name} ${option.patronymic}`}
+                                                            placeholder='Выберите студента'
+                                                            allowNew={false}
+                                                            required
+                                                        />
+                                                    </Form.Group>
+                                                </td>
+                                                <td className='d-flex flex-column justify-content-center'>
+                                                    <DeleteItemConfirmation
+                                                        onDelete={() => handleDeleteMember(member)}
+                                                    />
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </Table>
+                            </div>
+                        </div>
+                        <div className='d-flex flex-wrap mb-3 justify-content-between'>
+                            <Form.Label>Вопросы:</Form.Label>
+                            <Button variant='primary' onClick={addQuestion}>
+                                Добавить вопрос
                             </Button>
                         </div>
-                        <div className={`table-responsive ${members.length === 0 ? 'd-none' : ''}`}>
-                            <Table>
+                        <div className={`table-responsive ${modalQuestions.length === 0 ? 'd-none' : ''}`}>
+                            <Table bordered hover>
                                 <thead>
                                     <tr>
-                                        <th>Участник</th>
+                                        <th>Вопрос</th>
                                         <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {members.map((member) => (
-                                        <tr key={member.id} className="align-middle">
+                                    {modalQuestions.map((question) => (
+                                        <tr key={question.id} className='align-middle'>
                                             <td>
-                                                <Form.Group controlId={`member${member.id}`} className='d-flex justify-content-center'>
-                                                    <Form.Label className='mb-1 mt-2'>Тема</Form.Label>
+                                                <Form.Group controlId={`question${question.id}`} className=''>
                                                     <Typeahead
-                                                        id="typeahead-members"
-                                                        options={options}
-                                                        defaultSelected={options.filter(option => option.value === selectedOption)}
-                                                        onChange={handleChange}
-                                                        labelKey="label"
-                                                        placeholder="Выберите тему"
+                                                        id='typeahead-question'
+                                                        options={questions.filter(question => !selectedQuestions.some(q => q === question.id))}
+                                                        onChange={(selected) => handleQuestionChange(selected, question.id)}
+                                                        labelKey={"question_body"}
+                                                        placeholder='Выберите вопрос'
                                                         allowNew={false}
                                                         required
                                                     />
                                                 </Form.Group>
                                             </td>
-                                            <td>
+                                            <td className='d-flex flex-column justify-content-center'>
                                                 <DeleteItemConfirmation
-                                                    onDelete={() => handleDeleteMember(answer.id)}
+                                                    onDelete={() => handleDeleteQuestion(question)}
                                                 />
                                             </td>
                                         </tr>
@@ -347,10 +534,10 @@ const Tests = () => {
                         </div>
                     </Modal.Body>
                     <Modal.Footer>
-                        <Button variant="secondary" onClick={handleModalCancel}>
+                        <Button variant='secondary' onClick={handleModalCancel}>
                             Отмена
                         </Button>
-                        <Button variant="primary" type="submit">
+                        <Button variant='primary' type='submit'>
                             Добавить
                         </Button>
                     </Modal.Footer>
@@ -363,35 +550,35 @@ const Tests = () => {
                         <Modal.Title>Редактировать тест</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
-                        <Form.Group className="mb-3" controlId="test_name">
+                        <Form.Group className='mb-3' controlId='test_name'>
                             <Form.Label>Название теста</Form.Label>
-                            <Form.Control type="text" name="test_name" defaultValue={selectedTest.test_name} required />
+                            <Form.Control type='text' name='test_name' defaultValue={selectedTest.test_name} required />
                         </Form.Group>
-                        <Form.Group className="mb-3" controlId="start_time">
+                        <Form.Group className='mb-3' controlId='start_time'>
                             <Form.Label>Время начала</Form.Label>
-                            <Form.Control type="datetime-local" name="start_time" defaultValue={selectedTest.start_time} required />
+                            <Form.Control type='datetime-local' name='start_time' defaultValue={selectedTest.start_time} required />
                         </Form.Group>
-                        <Form.Group className="mb-3" controlId="end_time">
+                        <Form.Group className='mb-3' controlId='end_time'>
                             <Form.Label>Время окончания</Form.Label>
-                            <Form.Control type="datetime-local" name="end_time" defaultValue={selectedTest.end_time} required />
+                            <Form.Control type='datetime-local' name='end_time' defaultValue={selectedTest.end_time} required />
                         </Form.Group>
-                        <Form.Group className="mb-3" controlId="time_to_pass">
+                        <Form.Group className='mb-3' controlId='time_to_pass'>
                             <Form.Label>Время на прохождение (в минутах)</Form.Label>
-                            <Form.Control type="number" name="time_to_pass" defaultValue={selectedTest.time_to_pass} required />
+                            <Form.Control type='number' name='time_to_pass' defaultValue={selectedTest.time_to_pass} required />
                         </Form.Group>
-                        <Form.Group className="mb-3" controlId="max_score">
+                        <Form.Group className='mb-3' controlId='max_score'>
                             <Form.Label>Максимальный балл</Form.Label>
-                            <Form.Control type="number" name="max_score" defaultValue={selectedTest.max_score} required />
+                            <Form.Control type='number' name='max_score' defaultValue={selectedTest.max_score} required />
                         </Form.Group>
-                        <Form.Group className="mb-3" controlId="count_in_stats">
-                            <Form.Check type="checkbox" name="count_in_stats" defaultChecked={selectedTest.count_in_stats} label="Учитывать результаты теста в статистике" />
+                        <Form.Group className='mb-3' controlId='count_in_stats'>
+                            <Form.Check type='checkbox' name='count_in_stats' defaultChecked={selectedTest.count_in_stats} label='Учитывать результаты теста в статистике' />
                         </Form.Group>
                     </Modal.Body>
                     <Modal.Footer>
-                        <Button variant="secondary" onClick={handleModalCancel}>
+                        <Button variant='secondary' onClick={handleModalCancel}>
                             Отмена
                         </Button>
-                        <Button variant="primary" type="submit">
+                        <Button variant='primary' type='submit'>
                             Сохранить изменения
                         </Button>
                     </Modal.Footer>
@@ -412,7 +599,6 @@ const Tests = () => {
                                         <th>Статус</th>
                                         <th>Оценка</th>
                                         <th>Времени затрачено</th>
-                                        <th>Действия</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -422,11 +608,6 @@ const Tests = () => {
                                             <td>{member.status_name}</td>
                                             <td>{member.grade}</td>
                                             <td>{member.time_spent}</td>
-                                            <td className='d-flex flex-column justify-content-end gap-2'>
-                                                <DeleteItemConfirmation
-                                                    onDelete={() => handleDeleteMember(member.id)}
-                                                />
-                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
