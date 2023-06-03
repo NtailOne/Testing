@@ -211,16 +211,18 @@ async function executeSelectSqlQuery(pool, sql, res) {
         });
 
         app.post('/answers', async (req, res) => {
-            const { question_id, answer_body, correctness } = req.body;
+            const { answers } = req.body;
             const sql = 'INSERT INTO answers (question_id, answer_body, correctness) VALUES (?, ?, ?)';
             try {
-                const [result] = await pool.execute(sql, [question_id, answer_body, correctness]);
-                const answer = { id: result.insertId, question_id, answer_body, correctness };
-                console.log(`Added answer with id ${result.insertId}`);
-                res.status(200).json(answer);
+                const results = await Promise.all(answers.map(async ({ question_id, answer_body, correctness }) => {
+                    const [result] = await pool.execute(sql, [question_id, answer_body, correctness]);
+                    console.log(`Added answer with id ${result.insertId}`);
+                    return { id: result.insertId, question_id, answer_body, correctness };
+                }));
+                res.status(200).json(results);
             } catch (err) {
                 console.error(err);
-                res.status(500).send('Error adding answer');
+                res.status(500).send('Error adding answers');
             }
         });
 
@@ -239,13 +241,21 @@ async function executeSelectSqlQuery(pool, sql, res) {
         });
 
         app.post('/tests_questions', async (req, res) => {
+            let questions;
             const { test_id, question_id } = req.body;
+            if (Array.isArray(question_id)) {
+                questions = question_id;
+            } else {
+                questions = [question_id];
+            }
             const sql = 'INSERT INTO tests_questions (test_id, question_id) VALUES (?, ?)';
             try {
-                const [result] = await pool.execute(sql, [test_id, question_id]);
-                const testsQuestions = { id: result.insertId, test_id, question_id };
-                console.log(`Added new tests_questions with id ${result.insertId}`);
-                res.status(200).json(testsQuestions);
+                const results = await Promise.all(questions.map(async question => {
+                    const [result] = await pool.execute(sql, [test_id, question]);
+                    console.log(`Added new tests_questions with id ${result.insertId}`);
+                    return { id: result.insertId, test_id, question_id: question };
+                }));
+                res.status(200).json(results);
             } catch (err) {
                 console.error(err);
                 res.status(500).send('Error adding tests_questions');
@@ -253,13 +263,15 @@ async function executeSelectSqlQuery(pool, sql, res) {
         });
 
         app.post('/tests_users', async (req, res) => {
-            const { test_id, user_id, grade, time_spent, status_id } = req.body;
+            const { test_id, users, grade, time_spent, status_id } = req.body;
             const sql = 'INSERT INTO tests_users (test_id, user_id, grade, time_spent, status_id) VALUES (?, ?, ?, ?, ?)';
             try {
-                const [result] = await pool.execute(sql, [test_id, user_id, grade, time_spent, status_id]);
-                const testsUsers = { id: result.insertId, test_id, user_id, grade, time_spent, status_id };
-                console.log(`Added new tests_users with id ${result.insertId}`);
-                res.status(200).json(testsUsers);
+                const results = await Promise.all(users.map(async (user_id) => {
+                    const [result] = await pool.execute(sql, [test_id, user_id, grade, time_spent, status_id]);
+                    return { id: result.insertId, test_id, user_id, grade, time_spent, status_id };
+                }));
+                console.log(`Added ${results.length} new tests_users`);
+                res.status(200).json(results);
             } catch (err) {
                 console.error(err);
                 res.status(500).send('Error adding tests_users');
@@ -565,11 +577,11 @@ async function executeSelectSqlQuery(pool, sql, res) {
         });
 
         // Другие запросы к БД
-        app.get('/questions/:topicId', async (req, res) => {
-            const topicId = req.params.topicId;
-            const sql = 'SELECT * FROM questions WHERE topic_id = ?';
+        app.get('/tests_questions/:testId', async (req, res) => {
+            const testId = req.params.topicId;
+            const sql = 'SELECT question_id FROM tests_questions WHERE test_id = ?';
             try {
-                const [rows] = await pool.execute(sql, [topicId]);
+                const [rows] = await pool.execute(sql, [testId]);
                 res.status(200).json(rows);
             } catch (err) {
                 console.error(err);

@@ -11,9 +11,8 @@ const Tests = () => {
     const [tests, setTests] = useState([]);
     const [questions, setQuestions] = useState([]);
     const [modalQuestions, setModalQuestions] = useState([]);
-    const [selectedQuestions, setSelectedQuestions] = useState([]);
+    const [selectedQuestionsIds, setSelectedQuestionsIds] = useState([]);
     const [nextQuestionId, setNextQuestionId] = useState(-1);
-    const [topics, setTopics] = useState([]);
     const [users, setUsers] = useState([]);
     const [courses, setCourses] = useState([]);
     const [selectedCourse, setSelectedCourse] = useState({});
@@ -23,6 +22,7 @@ const Tests = () => {
     const [members, setMembers] = useState([]);
     const [nextMemberId, setNextMemberId] = useState(-1);
     const [selectedMembers, setSelectedMembers] = useState([]);
+    const [selectedTeacher, setSelectedTeacher] = useState();
     const [selectedTest, setSelectedTest] = useState({});
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -41,7 +41,6 @@ const Tests = () => {
         getUsers();
         getCourses();
         getGroups();
-        getTopics();
         getQuestions();
     }, []);
 
@@ -65,14 +64,6 @@ const Tests = () => {
                 start_time: moment(test.start_time).format('DD.MM.YYYY HH:mm:ss'),
                 end_time: moment(test.end_time).format('DD.MM.YYYY HH:mm:ss')
             })));
-            setLoading(false);
-        });
-    };
-
-    const getTopics = () => {
-        setLoading(true);
-        axios.get(`/topics`).then((response) => {
-            setTopics(response.data);
             setLoading(false);
         });
     };
@@ -128,6 +119,16 @@ const Tests = () => {
         });
     };
 
+    const getTestQuestions = (testId) => {
+        setLoading(true);
+        axios.get(`/tests_questions/${testId}`).then((response) => {
+            const testsQuestions = questions.filter(question => response.data.includes(question.id));
+            setModalQuestions(testsQuestions);
+            setSelectedQuestionsIds(response.data);
+            setLoading(false);
+        });
+    };
+
     const handleSearch = (event) => {
         setSearchTerm(event.target.value);
     };
@@ -141,6 +142,10 @@ const Tests = () => {
         const term = searchTerm.toLowerCase();
         return value && value.toString().toLowerCase().includes(term);
     });
+
+    const handleTeacherChange = (selected) => {
+        setSelectedTeacher(selected[0]);
+    };
 
     const handleStudentChooseOptionChange = (event) => {
         setSelectedCourse({});
@@ -199,10 +204,10 @@ const Tests = () => {
 
     const handleQuestionChange = (selected, id) => {
         const selectedQuestion = selected[0];
-        if (selectedQuestions.includes(selectedQuestion.id)) {
+        if (selectedQuestionsIds.includes(selectedQuestion.id)) {
             return;
         }
-        setSelectedQuestions([...selectedQuestions, selectedQuestion.id]);
+        setSelectedQuestionsIds([...selectedQuestionsIds, selectedQuestion.id]);
         setModalQuestions(
             modalQuestions.map((question) =>
                 question.id === id
@@ -214,7 +219,7 @@ const Tests = () => {
 
     const handleDeleteQuestion = (selectedQuestion) => {
         setModalQuestions(modalQuestions.filter((question) => question.id !== selectedQuestion.id));
-        setSelectedQuestions(selectedQuestions.filter((question) => question !== selectedQuestion.question_body));
+        setSelectedQuestionsIds(selectedQuestionsIds.filter((question) => question !== selectedQuestion.id));
     };
 
     const handleModalCancel = () => {
@@ -226,7 +231,7 @@ const Tests = () => {
         setSelectedMembers([]);
         setNextQuestionId(-1);
         setModalQuestions([]);
-        setSelectedQuestions([]);
+        setSelectedQuestionsIds([]);
         setShowAddModal(false);
         setShowEditModal(false);
         setShowMembersModal(false);
@@ -238,6 +243,7 @@ const Tests = () => {
 
     const handleShowEditModal = (test) => {
         setSelectedTest(test);
+        getTestQuestions(test.id);
         setShowEditModal(true);
     };
 
@@ -252,29 +258,40 @@ const Tests = () => {
         setLoading(true);
 
         const form = event.target;
-        const body = {
+        const testBody = {
             test_name: form.test_name.value,
             start_time: form.start_time.value,
             end_time: form.end_time.value,
             time_to_pass: form.time_to_pass.value,
             max_score: form.max_score.value,
-            count_in_stats: form.count_in_stats.checked,
-            course_id: selectedCourse.id,
-            group_id: selectedGroup,
-            members: selectedMembers,
-            questions: selectedQuestions
-        };
+            teacher_id: selectedTeacher.id,
+            count_in_stats: form.count_in_stats.checked
+        }
+        const testUsers = {
+            test_id: -1,
+            users: selectedMembers
+        }
+        const testQuestions = {
+            test_id: -1,
+            questions: selectedQuestionsIds
+        }
 
-        axios.post(`/tests`, body).then((response) => {
+        axios.post(`/tests`, testBody).then((response) => {
             setTests([...tests, response.data]);
             setShowAddModal(false);
+            testUsers.test_id = response.data.id;
+            testQuestions.test_id = response.data.id;
+            axios.post(`/tests_users`, testUsers).catch((error) => {
+                console.error(error);
+            });
+            axios.post(`/tests_questions`, testQuestions).catch((error) => {
+                console.error(error);
+            });
+            setLoading(false);
         }).catch((error) => {
             console.error(error);
         });
-
-        setLoading(false);
     };
-
 
     const handleEditSubmit = (event) => {
         event.preventDefault();
@@ -419,6 +436,18 @@ const Tests = () => {
                         <Form.Group className='mb-3' controlId='count_in_stats'>
                             <Form.Check type='checkbox' name='count_in_stats' label='Учитывать результаты теста в статистике' />
                         </Form.Group>
+                        <Form.Group className='mb-3' controlId='teacher'>
+                            <Form.Label>Выберите преподавателя</Form.Label>
+                            <Typeahead
+                                id='typeahead-teacher'
+                                options={users.filter(user => user.role_id === roles['teacher'])}
+                                onChange={handleTeacherChange}
+                                labelKey={option => `${option.surname} ${option.name} ${option.patronymic}`}
+                                placeholder='Выберите преподавателя'
+                                allowNew={false}
+                                required
+                            />
+                        </Form.Group>
                         <div className='d-flex flex-column flex-sm-row justify-content-between gap-3 mb-3'>
                             <Form.Check
                                 type='radio'
@@ -530,7 +559,7 @@ const Tests = () => {
                                                 <Form.Group controlId={`question${question.id}`} className=''>
                                                     <Typeahead
                                                         id='typeahead-question'
-                                                        options={questions.filter(question => !selectedQuestions.some(q => q === question.id))}
+                                                        options={questions.filter(question => !selectedQuestionsIds.some(q => q === question.id))}
                                                         onChange={(selected) => handleQuestionChange(selected, question.id)}
                                                         labelKey={"question_body"}
                                                         placeholder='Выберите вопрос'

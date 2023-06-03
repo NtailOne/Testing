@@ -166,21 +166,27 @@ const Questions = () => {
             question_body: form.question.value
         };
 
-        axios.post(`/questions`, body).then((response) => {
-            setQuestions([...questions, response.data]);
-            const question_id = response.data.id;
-            Promise.all(
-                updatedAnswers.map((answer) => {
-                    return axios.post(`/answers`, { ...answer, question_id });
-                })
-            ).then((responses) => {
-                const newAnswers = responses.map((response) => response.data);
-                setAnswers((prevState) => [...prevState, ...newAnswers]);
+        axios.post(`/questions`, body)
+            .then((response) => {
+                setQuestions([...questions, response.data]);
+                const question_id = response.data.id;
+
+                const answersArr = updatedAnswers.map(answer => ({
+                    question_id,
+                    answer_body: answer.answer_body,
+                    correctness: answer.correctness
+                }));
+
+                axios.post(`/answers`, { answers: answersArr })
+                    .then((response) => {
+                        const newAnswers = response.data;
+                        setAnswers((prevState) => [...prevState, ...newAnswers]);
+                    });
+
+                handleModalCancel();
+                getQuestionsTable();
+                setLoading(false);
             });
-            handleModalCancel();
-            getQuestionsTable();
-            setLoading(false);
-        });
         setShowAddModal(false);
     };
 
@@ -354,11 +360,11 @@ const Questions = () => {
                     const newQuestion = { topic_id: topicId, question_body: questionBody };
                     const questionResponse = await axios.post('/questions', newQuestion);
                     const questionId = questionResponse.data.id;
-                    const answerPromises = updatedAnswers.map((answer) => {
-                        const newAnswer = { question_id: questionId, answer_body: answer.answer_body, correctness: answer.correctness };
-                        return axios.post('/answers', newAnswer);
+                    const newAnswers = updatedAnswers.map(answer => ({ question_id: questionId, answer_body: answer.answer_body, correctness: answer.correctness }));
+                    axios.post('/answers', { answers: newAnswers }).then((response) => {
+                        const responseAnswers = response.data;
+                        setAnswers((prevState) => [...prevState, ...responseAnswers]);
                     });
-                    await Promise.all(answerPromises);
                 }
                 if (failedRecords.length > 0) {
                     const message = failedRecords.map(({ record, reason }) => `Запись №${record}. Причина: ${reason}`).join('\n');
