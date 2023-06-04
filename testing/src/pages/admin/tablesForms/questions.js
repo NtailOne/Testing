@@ -101,7 +101,7 @@ const Questions = () => {
     };
 
     const handleDeleteModalAnswer = (answerId) => {
-        setModalAnswersToDelete(modalAnswers.filter((modalAnswer) => modalAnswer.id === answerId));
+        setModalAnswersToDelete([...modalAnswersToDelete, modalAnswers.filter((modalAnswer) => modalAnswer.id === answerId)]);
         setModalAnswers(modalAnswers.filter((modalAnswer) => modalAnswer.id !== answerId));
     };
 
@@ -203,7 +203,7 @@ const Questions = () => {
             alert('Вы не добавили ни одного ответа')
             return;
         }
-        
+
         setLoading(true);
 
         const countTrue = modalAnswers.filter(answer => answer.correctness === true).length;
@@ -223,7 +223,14 @@ const Questions = () => {
         axios.put(`/questions/${selectedQuestion.id}`, body).then(() => {
             const answerPromises = updatedAnswers.map(answer => {
                 if (answer.id < 0) {
-                    return axios.post(`/answers`, { ...answer, question_id: selectedQuestion.id });
+                    return axios.post('/answers', {
+                        answers: [
+                            {
+                                ...answer,
+                                question_id: selectedQuestion.id
+                            }
+                        ]
+                    });
                 } else if (answer.id >= 0) {
                     return axios.put(`/answers/${answer.id}`, answer);
                 }

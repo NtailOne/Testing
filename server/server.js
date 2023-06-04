@@ -217,6 +217,7 @@ async function executeSelectSqlQuery(pool, sql, res) {
 
         app.post('/answers', async (req, res) => {
             const { answers } = req.body;
+            console.log(answers)
             const sql = 'INSERT INTO answers (question_id, answer_body, correctness) VALUES (?, ?, ?)';
             try {
                 const results = await Promise.all(answers.map(async ({ question_id, answer_body, correctness }) => {
@@ -246,16 +247,10 @@ async function executeSelectSqlQuery(pool, sql, res) {
         });
 
         app.post('/tests_questions', async (req, res) => {
-            let questions;
             const { test_id, questions_ids } = req.body;
-            if (Array.isArray(questions_ids)) {
-                questions = questions_ids;
-            } else {
-                questions = [questions_ids];
-            }
             const sql = 'INSERT INTO tests_questions (test_id, question_id) VALUES (?, ?)';
             try {
-                const results = await Promise.all(questions.map(async question => {
+                const results = await Promise.all(questions_ids.map(async question => {
                     const [result] = await pool.execute(sql, [test_id, question]);
                     return { id: result.insertId, test_id, question_id: question };
                 }));
@@ -547,16 +542,16 @@ async function executeSelectSqlQuery(pool, sql, res) {
             }
         });
 
-        app.delete('/tests_questions/:id', async (req, res) => {
-            const id = req.params.id;
-            const sql = 'DELETE FROM tests_questions WHERE id = ?';
+        app.delete('/tests_questions/:testId/:questionId', async (req, res) => {
+            const { testId, questionId } = req.params;
+            const sql = 'DELETE FROM tests_questions WHERE test_id = ? && question_id = ?';
             try {
-                const [result] = await pool.execute(sql, [id]);
+                const [result] = await pool.execute(sql, [testId, questionId]);
                 if (result.affectedRows > 0) {
-                    console.log(`Deleted tests_questions with id ${id}`);
-                    res.status(200).send(`Tests-Questions with id ${id} deleted`);
+                    console.log(`Deleted tests_questions with test id ${testId} and question id ${questionId}`);
+                    res.status(200).send(`Tests-questions with test id ${testId} and question id ${questionId} deleted`);
                 } else {
-                    res.status(404).send('Tests-Questions not found');
+                    res.status(404).send('Tests-questions not found');
                 }
             } catch (err) {
                 console.error(err);
@@ -564,16 +559,16 @@ async function executeSelectSqlQuery(pool, sql, res) {
             }
         });
 
-        app.delete('/tests_users/:id', async (req, res) => {
-            const id = req.params.id;
-            const sql = 'DELETE FROM tests_users WHERE id = ?';
+        app.delete('/tests_users/:testId/:userId', async (req, res) => {
+            const { testId, userId } = req.params;
+            const sql = 'DELETE FROM tests_users WHERE test_id = ? && user_id = ?';
             try {
-                const [result] = await pool.execute(sql, [id]);
+                const [result] = await pool.execute(sql, [testId, userId]);
                 if (result.affectedRows > 0) {
-                    console.log(`Deleted tests_users with id ${id}`);
-                    res.status(200).send(`Tests-Users with id ${id} deleted`);
+                    console.log(`Deleted tests_users with test id ${testId} and user id ${userId}`);
+                    res.status(200).send(`Tests-users with test id ${testId} and user id ${userId} deleted`);
                 } else {
-                    res.status(404).send('Tests-Users not found');
+                    res.status(404).send('Tests-users not found');
                 }
             } catch (err) {
                 console.error(err);
@@ -583,14 +578,15 @@ async function executeSelectSqlQuery(pool, sql, res) {
 
         // Другие запросы к БД
         app.get('/tests_questions/:testId', async (req, res) => {
-            const testId = req.params.topicId;
+            const testId = req.params.testId;
             const sql = 'SELECT question_id FROM tests_questions WHERE test_id = ?';
             try {
                 const [rows] = await pool.execute(sql, [testId]);
-                res.status(200).json(rows);
+                const questionIds = rows.map(row => row.question_id);
+                res.status(200).json(questionIds);
             } catch (err) {
                 console.error(err);
-                res.status(500).send('Error retrieving questions');
+                res.status(500).send('Error retrieving test questions');
             }
         });
 
@@ -607,6 +603,19 @@ async function executeSelectSqlQuery(pool, sql, res) {
             } catch (err) {
                 console.error(err);
                 res.status(500).send('Error retrieving members');
+            }
+        });
+
+        app.get('/test_users/:testId', async (req, res) => {
+            const testId = req.params.testId;
+            const sql = 'SELECT user_id FROM tests_users WHERE test_id = ?';
+            try {
+                const [rows] = await pool.execute(sql, [testId]);
+                const userIds = rows.map(row => row.user_id);
+                res.status(200).json(userIds);
+            } catch (err) {
+                console.error(err);
+                res.status(500).send('Error retrieving test users');
             }
         });
 

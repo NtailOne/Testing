@@ -11,6 +11,7 @@ const Tests = () => {
     const [tests, setTests] = useState([]);
     const [questions, setQuestions] = useState([]);
     const [modalQuestions, setModalQuestions] = useState([]);
+    const [modalQuestionsToDelete, setModalQuestionsToDelete] = useState([]);
     const [selectedQuestionsIds, setSelectedQuestionsIds] = useState([]);
     const [nextQuestionId, setNextQuestionId] = useState(-1);
     const [users, setUsers] = useState([]);
@@ -20,6 +21,7 @@ const Tests = () => {
     const [selectedGroup, setSelectedGroup] = useState({});
     const [roles, setRoles] = useState({});
     const [members, setMembers] = useState([]);
+    const [membersToDelete, setMembersToDelete] = useState([]);
     const [selectedMembersIds, setSelectedMembersIds] = useState([]);
     const [nextMemberId, setNextMemberId] = useState(-1);
     const [selectedTeacher, setSelectedTeacher] = useState();
@@ -130,6 +132,16 @@ const Tests = () => {
         });
     };
 
+    const getTestUsersIds = (testId) => {
+        setLoading(true);
+        axios.get(`/test_users/${testId}`).then((response) => {
+            const testsUsers = users.filter(user => response.data.includes(user.id));
+            setMembers(testsUsers);
+            setSelectedMembersIds(response.data);
+            setLoading(false);
+        });
+    };
+
     const getTestQuestions = (testId) => {
         setLoading(true);
         axios.get(`/tests_questions/${testId}`).then((response) => {
@@ -213,6 +225,7 @@ const Tests = () => {
     const handleDeleteMember = (selectedMember) => {
         setMembers(members.filter((member) => member.id !== selectedMember.id));
         setSelectedMembersIds(selectedMembersIds.filter((member) => member !== selectedMember.user_id));
+        setMembersToDelete([...membersToDelete, members.filter((member) => member.id === selectedMember.id)]);
     };
 
     const addQuestion = (question_body = '') => {
@@ -242,6 +255,11 @@ const Tests = () => {
     const handleDeleteQuestion = (selectedQuestion) => {
         setModalQuestions(modalQuestions.filter((question) => question.id !== selectedQuestion.id));
         setSelectedQuestionsIds(selectedQuestionsIds.filter((question) => question !== selectedQuestion.id));
+        setModalQuestionsToDelete([...modalQuestionsToDelete, modalQuestions.filter((question) => question.id === selectedQuestion.id)]);
+    };
+
+    const handleRefresh = (testId) => {
+        getMembers(testId);
     };
 
     const handleModalCancel = () => {
@@ -250,9 +268,11 @@ const Tests = () => {
         setSelectedGroup({});
         setNextMemberId(-1);
         setMembers([]);
+        setMembersToDelete([]);
         setSelectedMembersIds([]);
         setNextQuestionId(-1);
         setModalQuestions([]);
+        setModalQuestionsToDelete([]);
         setSelectedQuestionsIds([]);
         setShowAddModal(false);
         setShowEditModal(false);
@@ -265,6 +285,10 @@ const Tests = () => {
 
     const handleShowEditModal = (test) => {
         setSelectedTest(test);
+        setSelectedStudentChooseOption('Отдельно');
+        setSelectedCourse({});
+        setSelectedGroup({});
+        getTestUsersIds(test.id);
         getTestQuestions(test.id);
         setShowEditModal(true);
     };
@@ -360,20 +384,118 @@ const Tests = () => {
         event.preventDefault();
         setLoading(true);
 
+        if (selectedTeacher === undefined) {
+            alert('Выберите преподавателя');
+            setLoading(false);
+            return;
+        } else if (selectedQuestionsIds.length === 0) {
+            alert('Выберите вопросы')
+            setLoading(false);
+            return;
+        }
+
         const form = event.target;
-        const body = {
-            title: form.title.value,
-            description: form.description.value,
+        const startTime = moment.utc(form.start_time.value).format('YYYY-MM-DD HH:mm:ss');
+        const endTime = moment.utc(form.end_time.value).format('YYYY-MM-DD HH:mm:ss');
+        const timeToPass = moment.utc(
+            moment.duration(form.time_to_pass.value, 'minutes').asMilliseconds()
+        ).format('HH:mm:ss');
+
+        const testBody = {
+            test_name: form.test_name.value,
+            start_time: startTime,
+            end_time: endTime,
+            time_to_pass: timeToPass,
+            max_score: selectedQuestionsIds.length,
+            teacher_id: selectedTeacher.id,
+            count_in_stats: form.count_in_stats.checked
         };
 
-        axios.put(`/tests/${selectedTest.id}`, body).then(() => {
-            setTests(
-                tests.map((test) =>
-                    test.id === selectedTest.id ? { ...test, ...body } : test
-                )
-            );
-            getTestsTable();
+        let membersIds = selectedMembersIds;
+        console.log(selectedCourse)
+        console.log(membersIds)
+        if (JSON.stringify(selectedCourse) !== '{}') {
+            membersIds = users.filter(user =>
+                user.role_id == roles['student']
+                && user.course_id == selectedCourse.id)
+                .map(user => user.id);
+            console.log('course / ', membersIds)
+        } else if (JSON.stringify(selectedGroup) !== '{}') {
+            membersIds = users.filter(user =>
+                user.role_id == roles['student']
+                && user.group_id == selectedGroup.id)
+                .map(user => user.id);
+            console.log('group / ', membersIds)
+        }
+        console.log(membersIds)
+
+        if (membersIds.length === 0) {
+            alert('По указанным параметрам студентов не найдено');
             setLoading(false);
+            return;
+        }
+
+        const testUsers = {
+            test_id: -1,
+            users: [],
+            grade: 0,
+            time_spent: moment.utc(
+                moment.duration(0, 'minutes').asMilliseconds()
+            ).format('HH:mm:ss'),
+            status_id: statuses.find(status => status.status_name === 'Не начал').id
+        };
+        const testQuestions = {
+            test_id: -1,
+            questions_ids: []
+        };
+
+        axios.put(`/tests/${selectedTest.id}`, testBody).then(() => {
+            const membersPromises = members.map(member => {
+                if (member.id < 0) {
+                    return axios.post(`/tests_users`, {
+                        ...testUsers,
+                        users: [member.id],
+                        test_id: selectedTest.id
+                    });
+                } else if (member.id >= 0) {
+                    return axios.put(`/tests_users/${member.id}`, member);
+                }
+                return Promise.resolve();
+            });
+            const questionsPromises = modalQuestions.map(question => {
+                if (question.id < 0) {
+                    return axios.post(`/tests_questions`, {
+                        ...testQuestions,
+                        questions_ids: [question.id],
+                        test_id: selectedTest.id
+                    });
+                } else if (question.id >= 0) {
+                    return axios.put(`/tests_questions/${question.id}`, question);
+                }
+                return Promise.resolve();
+            });
+            const membersDeletePromises = membersToDelete.map(member => {
+                return axios.delete(`/tests_users/${selectedTest.id}/${member.id}`);
+            });
+            const questionsDeletePromises = modalQuestionsToDelete.map(question => {
+                return axios.delete(`/tests_questions/${selectedTest.id}/${question.id}`);
+            });
+            Promise.all([
+                ...membersPromises,
+                ...questionsPromises,
+                ...membersDeletePromises,
+                ...questionsDeletePromises
+            ]).then(() => {
+                getTestsTable();
+                getTests();
+                setMembersToDelete([]);
+                setModalQuestionsToDelete([]);
+                setLoading(false);
+            }).catch((error) => {
+                console.log("Error updating questions and users: ", error);
+            });
+        }).catch((error) => {
+            console.log("Error updating test: ", error);
         });
         setShowEditModal(false);
     };
@@ -657,27 +779,187 @@ const Tests = () => {
                     <Modal.Body>
                         <Form.Group className='mb-3' controlId='test_name'>
                             <Form.Label>Название теста</Form.Label>
-                            <Form.Control type='text' name='test_name' defaultValue={selectedTest.test_name} required />
+                            <Form.Control type='text' name='test_name'
+                                defaultValue={selectedTest.test_name} placeholder='Введите название'
+                                required
+                            />
                         </Form.Group>
-                        <Form.Group className='mb-3' controlId='start_time'>
-                            <Form.Label>Время начала</Form.Label>
-                            <Form.Control type='datetime-local' name='start_time' defaultValue={selectedTest.start_time} required />
-                        </Form.Group>
-                        <Form.Group className='mb-3' controlId='end_time'>
-                            <Form.Label>Время окончания</Form.Label>
-                            <Form.Control type='datetime-local' name='end_time' defaultValue={selectedTest.end_time} required />
-                        </Form.Group>
+                        <div className='d-flex flex-wrap gap-3 mb-3'>
+                            <Form.Group className='col-12 col-sm' controlId='start_time'>
+                                <Form.Label>Время начала</Form.Label>
+                                <Form.Control type='datetime-local' name='start_time'
+                                    defaultValue={moment(selectedTest.start_time, 'DD.MM.YYYY HH:mm:ss')
+                                        .format('YYYY-MM-DDTHH:mm')}
+                                    required
+                                />
+                            </Form.Group>
+                            <Form.Group className='col-12 col-sm' controlId='end_time'>
+                                <Form.Label>Время окончания</Form.Label>
+                                <Form.Control type='datetime-local' name='end_time'
+                                    defaultValue={moment(selectedTest.end_time, 'DD.MM.YYYY HH:mm:ss')
+                                        .format('YYYY-MM-DDTHH:mm')}
+                                    required
+                                />
+                            </Form.Group>
+                        </div>
                         <Form.Group className='mb-3' controlId='time_to_pass'>
                             <Form.Label>Время на прохождение (в минутах)</Form.Label>
-                            <Form.Control type='number' name='time_to_pass' defaultValue={selectedTest.time_to_pass} required />
-                        </Form.Group>
-                        <Form.Group className='mb-3' controlId='max_score'>
-                            <Form.Label>Максимальный балл</Form.Label>
-                            <Form.Control type='number' name='max_score' defaultValue={selectedTest.max_score} required />
+                            <Form.Control type='number' name='time_to_pass' placeholder='Введите время'
+                                defaultValue={moment.duration(selectedTest.time_to_pass).asMinutes()}
+                                required
+                            />
                         </Form.Group>
                         <Form.Group className='mb-3' controlId='count_in_stats'>
-                            <Form.Check type='checkbox' name='count_in_stats' defaultChecked={selectedTest.count_in_stats} label='Учитывать результаты теста в статистике' />
+                            <Form.Check type='checkbox' name='count_in_stats'
+                                defaultChecked={selectedTest.count_in_stats}
+                                label='Учитывать результаты теста в статистике'
+                            />
                         </Form.Group>
+                        <Form.Group className='mb-3' controlId='teacher'>
+                            <Form.Label>Выберите преподавателя</Form.Label>
+                            <Typeahead
+                                id='typeahead-teacher'
+                                options={users.filter(user => user.role_id === roles['teacher'])}
+                                onChange={handleTeacherChange}
+                                labelKey={option => `${option.surname} ${option.name} ${option.patronymic}`}
+                                placeholder='Выберите преподавателя'
+                                selected={selectedTeacher ? [selectedTeacher] : []}
+                                allowNew={false}
+                                required
+                            />
+                        </Form.Group>
+                        <div className='d-flex flex-column flex-sm-row justify-content-between gap-3 mb-3'>
+                            <Form.Check
+                                type='radio'
+                                label='Курс'
+                                value='Курс'
+                                checked={selectedStudentChooseOption === 'Курс'}
+                                onChange={handleStudentChooseOptionChange}
+                            />
+                            <Form.Check
+                                type='radio'
+                                label='Группа'
+                                value='Группа'
+                                checked={selectedStudentChooseOption === 'Группа'}
+                                onChange={handleStudentChooseOptionChange}
+                            />
+                            <Form.Check
+                                type='radio'
+                                label='Отдельно'
+                                value='Отдельно'
+                                checked={selectedStudentChooseOption === 'Отдельно'}
+                                onChange={handleStudentChooseOptionChange}
+                            />
+                        </div>
+                        <div className='d-flex flex-wrap gap-3'>
+                            <Form.Group controlId='course' className={`${selectedStudentChooseOption !== 'Отдельно' ? 'd-flex' : 'd-none'} col-12 col-sm flex-wrap mb-3 justify-content-between`}>
+                                <Form.Label>Выберите курс</Form.Label>
+                                <Form.Select value={selectedCourse.id} onChange={handleCourseChange}>
+                                    <option value='' disabled>Выберите курс</option>
+                                    {courses.map((course) => (
+                                        <option key={course.id} value={course.id}>
+                                            {course.course_num}
+                                        </option>
+                                    ))}
+                                </Form.Select>
+                            </Form.Group>
+                            <Form.Group controlId='group' className={`${selectedStudentChooseOption === 'Группа' ? 'd-flex' : 'd-none'} col-12 col-sm flex-wrap mb-3 justify-content-between`}>
+                                <Form.Label>Выберите группу</Form.Label>
+                                <Form.Select value={selectedGroup} onChange={handleGroupChange}>
+                                    <option value='' disabled>Выберите группу</option>
+                                    {groups.filter(group => group.course_id === selectedCourse.id)
+                                        .map((group) => (
+                                            <option key={group.id} value={group.id}>
+                                                {group.group_name}
+                                            </option>
+                                        ))}
+                                </Form.Select>
+                            </Form.Group>
+                        </div>
+                        <div className={`${selectedStudentChooseOption === 'Отдельно' ? 'd-block' : 'd-none'}`}>
+                            <div className='d-flex flex-wrap mb-3 justify-content-between'>
+                                <Form.Label>Участники:</Form.Label>
+                                <Button variant='primary' onClick={addMember}>
+                                    Добавить студента
+                                </Button>
+                            </div>
+                            <div className={`table-responsive ${members.length === 0 ? 'd-none' : ''}`}>
+                                <Table bordered hover>
+                                    <thead>
+                                        <tr>
+                                            <th>Участник</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {members.map((member) => (
+                                            <tr key={member.id} className='align-middle'>
+                                                <td>
+                                                    <Form.Group controlId={`member${member.id}`} className=''>
+                                                        <Typeahead
+                                                            id='typeahead-members'
+                                                            options={users.filter(user => user.role_id === roles.student && !selectedMembersIds.some(member => member === user.id))}
+                                                            onChange={(selected) => handleMemberChange(selected, member.id)}
+                                                            labelKey={option => `${option.surname} ${option.name} ${option.patronymic}`}
+                                                            placeholder='Выберите студента'
+                                                            selected={member.id > 0 ? [member] : []}
+                                                            allowNew={false}
+                                                            required
+                                                        />
+                                                    </Form.Group>
+                                                </td>
+                                                <td className='d-flex flex-column justify-content-center'>
+                                                    <DeleteItemConfirmation
+                                                        onDelete={() => handleDeleteMember(member)}
+                                                    />
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </Table>
+                            </div>
+                        </div>
+                        <div className='d-flex flex-wrap mb-3 justify-content-between'>
+                            <Form.Label>Вопросы:</Form.Label>
+                            <Button variant='primary' onClick={addQuestion}>
+                                Добавить вопрос
+                            </Button>
+                        </div>
+                        <div className={`table-responsive ${modalQuestions.length === 0 ? 'd-none' : ''}`}>
+                            <Table bordered hover>
+                                <thead>
+                                    <tr>
+                                        <th>Вопрос</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {modalQuestions.map((question) => (
+                                        <tr key={question.id} className='align-middle'>
+                                            <td>
+                                                <Form.Group controlId={`question${question.id}`} className=''>
+                                                    <Typeahead
+                                                        id='typeahead-question'
+                                                        options={questions.filter(question => !selectedQuestionsIds.some(q => q === question.id))}
+                                                        onChange={(selected) => handleQuestionChange(selected, question.id)}
+                                                        labelKey={"question_body"}
+                                                        placeholder='Выберите вопрос'
+                                                        selected={question.id > 0 ? [question] : []}
+                                                        allowNew={false}
+                                                        required
+                                                    />
+                                                </Form.Group>
+                                            </td>
+                                            <td className='d-flex flex-column justify-content-center'>
+                                                <DeleteItemConfirmation
+                                                    onDelete={() => handleDeleteQuestion(question)}
+                                                />
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </Table>
+                        </div>
                     </Modal.Body>
                     <Modal.Footer>
                         <Button variant='secondary' onClick={handleModalCancel}>
@@ -692,8 +974,11 @@ const Tests = () => {
 
             <Modal show={showMembersModal} onHide={handleModalCancel} className='members'>
                 <Form>
-                    <Modal.Header closeButton>
+                    <Modal.Header closeButton className='d-flex gap-4'>
                         <Modal.Title>{selectedTest.test_name}</Modal.Title>
+                        <Button variant='secondary' onClick={() => handleRefresh(selectedTest.id)}>
+                            Обновить
+                        </Button>
                     </Modal.Header>
                     <Modal.Body>
                         {loading ? <LoadingIndicator color='black' /> : <div className='table-responsive'>
