@@ -20,11 +20,11 @@ const Tests = () => {
     const [selectedGroup, setSelectedGroup] = useState({});
     const [roles, setRoles] = useState({});
     const [members, setMembers] = useState([]);
+    const [selectedMembersIds, setSelectedMembersIds] = useState([]);
     const [nextMemberId, setNextMemberId] = useState(-1);
-    const [selectedMembers, setSelectedMembers] = useState([]);
     const [selectedTeacher, setSelectedTeacher] = useState();
-    const [maxScore, setMaxScore] = useState(0);
     const [selectedTest, setSelectedTest] = useState({});
+    const [statuses, setStatuses] = useState([]);
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showMembersModal, setShowMembersModal] = useState(false);
@@ -43,6 +43,7 @@ const Tests = () => {
         getCourses();
         getGroups();
         getQuestions();
+        getStatuses();
     }, []);
 
     const getTestsTable = () => {
@@ -97,6 +98,7 @@ const Tests = () => {
         setLoading(true);
         axios.get(`/courses`).then((response) => {
             setCourses(response.data);
+            setSelectedCourse(response.data[0]);
             setLoading(false);
         });
     };
@@ -108,6 +110,14 @@ const Tests = () => {
             const teacherRoleId = data.find(role => role.role_name === 'Преподаватель').id;
             const studentRoleId = data.find(role => role.role_name === 'Студент').id;
             setRoles({ teacher: teacherRoleId, student: studentRoleId });
+            setLoading(false);
+        });
+    };
+
+    const getStatuses = () => {
+        setLoading(true);
+        axios.get(`/statuses`).then((response) => {
+            setStatuses(response.data);
             setLoading(false);
         });
     };
@@ -149,8 +159,16 @@ const Tests = () => {
     };
 
     const handleStudentChooseOptionChange = (event) => {
-        setSelectedCourse({});
-        setSelectedGroup({});
+        if (event.target.value === 'Курс') {
+            setSelectedCourse(courses[0]);
+            setSelectedGroup({});
+        } else if (event.target.value === 'Группа') {
+            setSelectedCourse(courses[0]);
+            setSelectedGroup(groups.filter(group => group.course_id === courses[0].id)[0]);
+        } else if (event.target.value === 'Отдельно') {
+            setSelectedCourse({});
+            setSelectedGroup({});
+        }
         setMembers([]);
         setSelectedStudentChooseOption(event.target.value);
     };
@@ -159,6 +177,9 @@ const Tests = () => {
         const courseNum = event.target.value;
         const course = courses.find(c => c.course_num == courseNum);
         setSelectedCourse(course);
+        if (JSON.stringify(selectedGroup) !== '{}') {
+            setSelectedGroup(groups.filter(group => group.course_id === course.id)[0]);
+        }
     };
 
     const handleGroupChange = (event) => {
@@ -176,10 +197,10 @@ const Tests = () => {
 
     const handleMemberChange = (selected, id) => {
         const selectedUser = selected[0];
-        if (selectedMembers.includes(selectedUser.id)) {
+        if (selectedMembersIds.includes(selectedUser.id)) {
             return;
         }
-        setSelectedMembers([...selectedMembers, selectedUser.id]);
+        setSelectedMembersIds([...selectedMembersIds, selectedUser.id]);
         setMembers(
             members.map((member) =>
                 member.id === id
@@ -191,7 +212,7 @@ const Tests = () => {
 
     const handleDeleteMember = (selectedMember) => {
         setMembers(members.filter((member) => member.id !== selectedMember.id));
-        setSelectedMembers(selectedMembers.filter((member) => member !== selectedMember.user_id));
+        setSelectedMembersIds(selectedMembersIds.filter((member) => member !== selectedMember.user_id));
     };
 
     const addQuestion = (question_body = '') => {
@@ -201,7 +222,6 @@ const Tests = () => {
         };
         setModalQuestions([...modalQuestions, newQuestion]);
         setNextQuestionId(prev => prev - 1);
-        setMaxScore(prev => prev + 1);
     };
 
     const handleQuestionChange = (selected, id) => {
@@ -222,7 +242,6 @@ const Tests = () => {
     const handleDeleteQuestion = (selectedQuestion) => {
         setModalQuestions(modalQuestions.filter((question) => question.id !== selectedQuestion.id));
         setSelectedQuestionsIds(selectedQuestionsIds.filter((question) => question !== selectedQuestion.id));
-        setMaxScore(prev => prev - 1);
     };
 
     const handleModalCancel = () => {
@@ -231,11 +250,10 @@ const Tests = () => {
         setSelectedGroup({});
         setNextMemberId(-1);
         setMembers([]);
-        setSelectedMembers([]);
+        setSelectedMembersIds([]);
         setNextQuestionId(-1);
         setModalQuestions([]);
         setSelectedQuestionsIds([]);
-        setMaxScore(0);
         setShowAddModal(false);
         setShowEditModal(false);
         setShowMembersModal(false);
@@ -261,39 +279,64 @@ const Tests = () => {
         event.preventDefault();
         setLoading(true);
 
+        if (selectedTeacher === undefined) {
+            alert('Выберите преподавателя');
+            setLoading(false);
+            return;
+        } else if (selectedQuestionsIds.length === 0) {
+            alert('Выберите вопросы')
+            setLoading(false);
+            return;
+        }
+
         const form = event.target;
         const startTime = moment.utc(form.start_time.value).format('YYYY-MM-DD HH:mm:ss');
         const endTime = moment.utc(form.end_time.value).format('YYYY-MM-DD HH:mm:ss');
         const timeToPass = moment.utc(
             moment.duration(form.time_to_pass.value, 'minutes').asMilliseconds()
         ).format('HH:mm:ss');
-        
+
         const testBody = {
             test_name: form.test_name.value,
             start_time: startTime,
             end_time: endTime,
             time_to_pass: timeToPass,
-            max_score: maxScore,
+            max_score: selectedQuestionsIds.length,
             teacher_id: selectedTeacher.id,
             count_in_stats: form.count_in_stats.checked
-        }
-        if (selectedCourse !== undefined) {
-            setSelectedMembers(users.filter(user =>
+        };
+
+        let membersIds = selectedMembersIds;
+        if (JSON.stringify(selectedCourse) !== '{}') {
+            membersIds = users.filter(user =>
                 user.role_id == roles['student']
-                && user.course_id == selectedCourse.id));
-        } else if (selectedGroup !== undefined) {
-            setSelectedMembers(users.filter(user =>
+                && user.course_id == selectedCourse.id)
+                .map(user => user.id);
+        } else if (JSON.stringify(selectedGroup) !== '{}') {
+            membersIds = users.filter(user =>
                 user.role_id == roles['student']
-                && user.group_id == selectedGroup.id));
+                && user.group_id == selectedGroup.id)
+                .map(user => user.id);
         }
+        if (membersIds.length === 0) {
+            alert('По указанным параметрам студентов не найдено');
+            setLoading(false);
+            return;
+        }
+
         const testUsers = {
             test_id: -1,
-            users: selectedMembers
-        }
+            users: membersIds,
+            grade: 0,
+            time_spent: moment.utc(
+                moment.duration(0, 'minutes').asMilliseconds()
+            ).format('HH:mm:ss'),
+            status_id: statuses.find(status => status.status_name === 'Не начал').id
+        };
         const testQuestions = {
             test_id: -1,
             questions_ids: selectedQuestionsIds
-        }
+        };
 
         axios.post(`/tests`, testBody).then((response) => {
             setTests([...tests, response.data]);
@@ -306,6 +349,7 @@ const Tests = () => {
             axios.post(`/tests_questions`, testQuestions).catch((error) => {
                 console.error(error);
             });
+            getTestsTable();
             setLoading(false);
         }).catch((error) => {
             console.error(error);
@@ -328,6 +372,7 @@ const Tests = () => {
                     test.id === selectedTest.id ? { ...test, ...body } : test
                 )
             );
+            getTestsTable();
             setLoading(false);
         });
         setShowEditModal(false);
@@ -337,6 +382,7 @@ const Tests = () => {
         setLoading(true);
         axios.delete(`/tests/${id}`).then(() => {
             setTests(tests.filter((test) => test.id !== id));
+            getTestsTable();
             setLoading(false);
         });
     };
@@ -531,7 +577,7 @@ const Tests = () => {
                                                     <Form.Group controlId={`member${member.id}`} className=''>
                                                         <Typeahead
                                                             id='typeahead-members'
-                                                            options={users.filter(user => user.role_id === roles.student && !selectedMembers.some(member => member === user.id))}
+                                                            options={users.filter(user => user.role_id === roles.student && !selectedMembersIds.some(member => member === user.id))}
                                                             onChange={(selected) => handleMemberChange(selected, member.id)}
                                                             labelKey={option => `${option.surname} ${option.name} ${option.patronymic}`}
                                                             placeholder='Выберите студента'

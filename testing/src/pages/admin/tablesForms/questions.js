@@ -192,7 +192,6 @@ const Questions = () => {
 
     const handleEditSubmit = (event) => {
         event.preventDefault();
-        setLoading(true);
 
         if (selectedOption === null) {
             alert('Выберите тему')
@@ -204,6 +203,8 @@ const Questions = () => {
             alert('Вы не добавили ни одного ответа')
             return;
         }
+        
+        setLoading(true);
 
         const countTrue = modalAnswers.filter(answer => answer.correctness === true).length;
         const countFalse = modalAnswers.length - countTrue;

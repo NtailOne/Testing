@@ -109,6 +109,11 @@ async function executeSelectSqlQuery(pool, sql, res) {
             await executeSelectSqlQuery(pool, sql, res);
         });
 
+        app.get('/statuses', async (req, res) => {
+            const sql = 'SELECT * FROM statuses';
+            await executeSelectSqlQuery(pool, sql, res);
+        });
+
         // Запросы для отображения записей в таблицах
         app.get('/users-table', async (req, res) => {
             const sql = `SELECT u.id, u.surname, u.name, u.patronymic, u.email, r.role_name, c.course_num, g.group_name
@@ -264,7 +269,6 @@ async function executeSelectSqlQuery(pool, sql, res) {
 
         app.post('/tests_users', async (req, res) => {
             const { test_id, users, grade, time_spent, status_id } = req.body;
-            console.log(test_id, '\n', users, '\n', grade, '\n', time_spent, '\n', status_id )
             const sql = 'INSERT INTO tests_users (test_id, user_id, grade, time_spent, status_id) VALUES (?, ?, ?, ?, ?)';
             try {
                 const results = await Promise.all(users.map(async (user_id) => {
