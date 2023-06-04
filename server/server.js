@@ -242,19 +242,19 @@ async function executeSelectSqlQuery(pool, sql, res) {
 
         app.post('/tests_questions', async (req, res) => {
             let questions;
-            const { test_id, question_id } = req.body;
-            if (Array.isArray(question_id)) {
-                questions = question_id;
+            const { test_id, questions_ids } = req.body;
+            if (Array.isArray(questions_ids)) {
+                questions = questions_ids;
             } else {
-                questions = [question_id];
+                questions = [questions_ids];
             }
             const sql = 'INSERT INTO tests_questions (test_id, question_id) VALUES (?, ?)';
             try {
                 const results = await Promise.all(questions.map(async question => {
                     const [result] = await pool.execute(sql, [test_id, question]);
-                    console.log(`Added new tests_questions with id ${result.insertId}`);
                     return { id: result.insertId, test_id, question_id: question };
                 }));
+                console.log(`Added ${results.length} new tests_questions`);
                 res.status(200).json(results);
             } catch (err) {
                 console.error(err);
@@ -264,6 +264,7 @@ async function executeSelectSqlQuery(pool, sql, res) {
 
         app.post('/tests_users', async (req, res) => {
             const { test_id, users, grade, time_spent, status_id } = req.body;
+            console.log(test_id, '\n', users, '\n', grade, '\n', time_spent, '\n', status_id )
             const sql = 'INSERT INTO tests_users (test_id, user_id, grade, time_spent, status_id) VALUES (?, ?, ?, ?, ?)';
             try {
                 const results = await Promise.all(users.map(async (user_id) => {

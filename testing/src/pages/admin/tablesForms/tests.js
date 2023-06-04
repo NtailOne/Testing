@@ -23,6 +23,7 @@ const Tests = () => {
     const [nextMemberId, setNextMemberId] = useState(-1);
     const [selectedMembers, setSelectedMembers] = useState([]);
     const [selectedTeacher, setSelectedTeacher] = useState();
+    const [maxScore, setMaxScore] = useState(0);
     const [selectedTest, setSelectedTest] = useState({});
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -49,8 +50,8 @@ const Tests = () => {
         axios.get(`/tests-table`).then((response) => {
             setTestsTable(response.data.map(test => ({
                 ...test,
-                start_time: moment(test.start_time).format('DD.MM.YYYY HH:mm:ss'),
-                end_time: moment(test.end_time).format('DD.MM.YYYY HH:mm:ss')
+                start_time: moment.utc(test.start_time).format('DD.MM.YYYY HH:mm:ss'),
+                end_time: moment.utc(test.end_time).format('DD.MM.YYYY HH:mm:ss')
             })));
             setLoading(false);
         });
@@ -61,8 +62,8 @@ const Tests = () => {
         axios.get(`/tests`).then((response) => {
             setTests(response.data.map(test => ({
                 ...test,
-                start_time: moment(test.start_time).format('DD.MM.YYYY HH:mm:ss'),
-                end_time: moment(test.end_time).format('DD.MM.YYYY HH:mm:ss')
+                start_time: moment.utc(test.start_time).format('DD.MM.YYYY HH:mm:ss'),
+                end_time: moment.utc(test.end_time).format('DD.MM.YYYY HH:mm:ss')
             })));
             setLoading(false);
         });
@@ -200,6 +201,7 @@ const Tests = () => {
         };
         setModalQuestions([...modalQuestions, newQuestion]);
         setNextQuestionId(prev => prev - 1);
+        setMaxScore(prev => prev + 1);
     };
 
     const handleQuestionChange = (selected, id) => {
@@ -220,6 +222,7 @@ const Tests = () => {
     const handleDeleteQuestion = (selectedQuestion) => {
         setModalQuestions(modalQuestions.filter((question) => question.id !== selectedQuestion.id));
         setSelectedQuestionsIds(selectedQuestionsIds.filter((question) => question !== selectedQuestion.id));
+        setMaxScore(prev => prev - 1);
     };
 
     const handleModalCancel = () => {
@@ -232,6 +235,7 @@ const Tests = () => {
         setNextQuestionId(-1);
         setModalQuestions([]);
         setSelectedQuestionsIds([]);
+        setMaxScore(0);
         setShowAddModal(false);
         setShowEditModal(false);
         setShowMembersModal(false);
@@ -258,14 +262,29 @@ const Tests = () => {
         setLoading(true);
 
         const form = event.target;
+        const startTime = moment.utc(form.start_time.value).format('YYYY-MM-DD HH:mm:ss');
+        const endTime = moment.utc(form.end_time.value).format('YYYY-MM-DD HH:mm:ss');
+        const timeToPass = moment.utc(
+            moment.duration(form.time_to_pass.value, 'minutes').asMilliseconds()
+        ).format('HH:mm:ss');
+        
         const testBody = {
             test_name: form.test_name.value,
-            start_time: form.start_time.value,
-            end_time: form.end_time.value,
-            time_to_pass: form.time_to_pass.value,
-            max_score: form.max_score.value,
+            start_time: startTime,
+            end_time: endTime,
+            time_to_pass: timeToPass,
+            max_score: maxScore,
             teacher_id: selectedTeacher.id,
             count_in_stats: form.count_in_stats.checked
+        }
+        if (selectedCourse !== undefined) {
+            setSelectedMembers(users.filter(user =>
+                user.role_id == roles['student']
+                && user.course_id == selectedCourse.id));
+        } else if (selectedGroup !== undefined) {
+            setSelectedMembers(users.filter(user =>
+                user.role_id == roles['student']
+                && user.group_id == selectedGroup.id));
         }
         const testUsers = {
             test_id: -1,
@@ -273,7 +292,7 @@ const Tests = () => {
         }
         const testQuestions = {
             test_id: -1,
-            questions: selectedQuestionsIds
+            questions_ids: selectedQuestionsIds
         }
 
         axios.post(`/tests`, testBody).then((response) => {
@@ -423,16 +442,10 @@ const Tests = () => {
                                 <Form.Control type='datetime-local' name='end_time' required />
                             </Form.Group>
                         </div>
-                        <div className='d-flex flex-wrap gap-3 mb-3'>
-                            <Form.Group className='col-12 col-sm' controlId='time_to_pass'>
-                                <Form.Label>Время на прохождение (в минутах)</Form.Label>
-                                <Form.Control type='number' name='time_to_pass' placeholder='Введите время' required />
-                            </Form.Group>
-                            <Form.Group className='col-12 col-sm' controlId='max_score'>
-                                <Form.Label>Максимальный балл</Form.Label>
-                                <Form.Control type='number' name='max_score' placeholder='Введите балл' required />
-                            </Form.Group>
-                        </div>
+                        <Form.Group className='mb-3' controlId='time_to_pass'>
+                            <Form.Label>Время на прохождение (в минутах)</Form.Label>
+                            <Form.Control type='number' name='time_to_pass' placeholder='Введите время' required />
+                        </Form.Group>
                         <Form.Group className='mb-3' controlId='count_in_stats'>
                             <Form.Check type='checkbox' name='count_in_stats' label='Учитывать результаты теста в статистике' />
                         </Form.Group>
