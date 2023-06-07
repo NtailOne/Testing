@@ -104,8 +104,16 @@
     font-weight: bold;
 }
 
+.text-large {
+    font-size: 1.5rem;
+}
+
 .text-white {
     color: white !important;
+}
+
+.text-black {
+    color: black !important;
 }
 
 .search-bar {
@@ -143,6 +151,25 @@
 
 .form-check-label {
     margin-left: 0.75rem;
+}
+
+.recharts-cartesian-axis-tick-value {
+    fill: white;
+}
+
+.recharts-legend-item-text {
+    fill: white;
+}
+
+.recharts-tooltip-label {
+    color: white;
+}
+
+.recharts-tooltip-wrapper {
+    background-color: black;
+    opacity: 0.8;
+    border-radius: 4px;
+    padding: 10px;
 }
 
 @media (min-width: 576px) {

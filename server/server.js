@@ -616,6 +616,18 @@ async function executeSelectSqlQuery(pool, sql, res) {
             }
         });
 
+        app.get('/test_users/full/:testId', async (req, res) => {
+            const testId = req.params.testId;
+            const sql = 'SELECT * FROM tests_users WHERE test_id = ?';
+            try {
+                const [rows] = await pool.execute(sql, [testId]);
+                res.status(200).json(rows);
+            } catch (err) {
+                console.error(err);
+                res.status(500).send('Error retrieving test users');
+            }
+        });
+
         // Обработка неопределенных URL-адресов
         app.use((req, res) => {
             res.status(404).send('Not found');

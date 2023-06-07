@@ -8,7 +8,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 
   background-image: url('./images/bg.png');
-  background-repeat: no-repeat;
+  background-repeat: repeat;
   background-size: cover;
   background-position: center center;
 

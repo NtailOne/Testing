@@ -550,14 +550,8 @@ const Tests = () => {
             questions_ids: []
         };
 
-        console.log("MEMBERS\n", membersIds)
-        console.log("QUESTIONS\n", selectedQuestionsIds)
-        console.log("MEMBERS TO DELETE\n", membersToDelete);
-        console.log("QUESTIONS TO DELETE\n", modalQuestionsToDelete);
-
         axios.put(`/tests/${selectedTest.id}`, testBody, { signal }).then(() => {
             const membersPromises = membersIds.map(memberId => {
-                console.log("MEMBER ID\n", memberId)
                 if (!selectedTestUsersIds.some(id => id === memberId)) {
                     return axios.post(`/tests_users`, {
                         ...testUsers,
@@ -565,6 +559,7 @@ const Tests = () => {
                         test_id: selectedTest.id
                     }, { signal });
                 }
+                return Promise.resolve();
             });
             const questionsPromises = selectedQuestionsIds.map(questionId => {
                 if (!selectedTestQuestionsIds.some(id => id === questionId)) {
@@ -574,6 +569,7 @@ const Tests = () => {
                         test_id: selectedTest.id
                     }, { signal });
                 }
+                return Promise.resolve();
             });
             const membersDeletePromises = membersToDelete.map(member => {
                 return axios.delete(`/tests_users/${selectedTest.id}/${member[0].id}`, { signal });

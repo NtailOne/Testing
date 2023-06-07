@@ -15,7 +15,7 @@ const Groups = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(false);
 
-    let tableName = 'Группы';
+    const tableName = 'Группы';
 
     useEffect(() => {
         getCourses();
