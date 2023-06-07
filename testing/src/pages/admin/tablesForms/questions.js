@@ -220,42 +220,47 @@ const Questions = () => {
             question_body: form.question.value
         };
 
-        axios.put(`/questions/${selectedQuestion.id}`, body).then(() => {
-            const answerPromises = updatedAnswers.map(answer => {
-                if (answer.id < 0) {
-                    return axios.post('/answers', {
-                        answers: [
-                            {
-                                ...answer,
-                                question_id: selectedQuestion.id
-                            }
-                        ]
-                    });
-                } else if (answer.id >= 0) {
-                    return axios.put(`/answers/${answer.id}`, answer);
+        const controller = new AbortController();
+        const signal = controller.signal;
+
+        axios.put(`/questions/${selectedQuestion.id}`, body, { signal })
+            .then(() => {
+                const answerPromises = updatedAnswers.map((answer) => {
+                    if (answer.id < 0) {
+                        return axios.post('/answers', {
+                            answers: [
+                                {
+                                    ...answer,
+                                    question_id: selectedQuestion.id
+                                }
+                            ]
+                        }, { signal });
+                    } else if (answer.id >= 0) {
+                        return axios.put(`/answers/${answer.id}`, answer, { signal });
+                    }
+                });
+                const answerDeletePromises = modalAnswersToDelete.map(answer => {
+                    return axios.delete(`/answers/${answer[0].id}`, { signal });
+                });
+                Promise.all([...answerPromises, ...answerDeletePromises]).then(() => {
+                    getAnswers();
+                    getQuestions();
+                    getQuestionsTable();
+                    setModalAnswersToDelete([]);
+                    setLoading(false);
+                    setShowEditModal(false);
+                }).catch(error => {
+                    console.log("Error updating answers: ", error);
+                });
+            })
+            .catch(error => {
+                if (axios.isCancel(error)) {
+                    console.log('Request canceled:', error.message);
+                } else {
+                    console.log("Error updating question: ", error);
                 }
-                return Promise.resolve();
+                controller.abort();
             });
-            const answerDeletePromises = modalAnswersToDelete.map(answer => {
-                return axios.delete(`/answers/${answer.id}`);
-            });
-            Promise.all([...answerPromises, ...answerDeletePromises]).then(() => {
-                getAnswers();
-                setQuestions(
-                    questions.map((question) =>
-                        question.id === selectedQuestion.id ? { ...question, ...body } : question
-                    )
-                );
-                getQuestionsTable();
-                setModalAnswersToDelete([]);
-                setLoading(false);
-            }).catch((error) => {
-                console.log("Error updating answers: ", error);
-            });
-        }).catch((error) => {
-            console.log("Error updating question: ", error);
-        });
-        setShowEditModal(false);
     };
 
     const handleDelete = (id) => {

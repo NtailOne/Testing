@@ -5,6 +5,7 @@ import axios from 'axios';
 import moment from 'moment';
 import DeleteItemConfirmation from '../../../components/DeleteConfirmation';
 import LoadingIndicator from '../../../components/LoadingIndicator';
+import ConfirmationModal from '../../../components/ConfirmationModal';
 
 const Tests = () => {
     const [testsTable, setTestsTable] = useState([]);
@@ -20,6 +21,8 @@ const Tests = () => {
     const [groups, setGroups] = useState([]);
     const [selectedGroup, setSelectedGroup] = useState({});
     const [roles, setRoles] = useState({});
+    const [selectedTestUsersIds, setSelectedTestUsersIds] = useState([]);
+    const [selectedTestQuestionsIds, setSelectedTestQuestionsIds] = useState([]);
     const [members, setMembers] = useState([]);
     const [membersToDelete, setMembersToDelete] = useState([]);
     const [selectedMembersIds, setSelectedMembersIds] = useState([]);
@@ -34,6 +37,9 @@ const Tests = () => {
     const [searchColumn, setSearchColumn] = useState('test_name');
     const [loading, setLoading] = useState(false);
     const [selectedStudentChooseOption, setSelectedStudentChooseOption] = useState('Курс');
+    const [newTest, setNewTest] = useState(false);
+    const [showConfirmation, setShowConfirmation] = useState(false);
+    const [editConfirmed, setEditConfirmed] = useState(false);
 
     let tableName = 'Тесты';
 
@@ -135,6 +141,7 @@ const Tests = () => {
     const getTestUsersIds = (testId) => {
         setLoading(true);
         axios.get(`/test_users/${testId}`).then((response) => {
+            setSelectedTestUsersIds(response.data);
             const testsUsers = users.filter(user => response.data.includes(user.id));
             setMembers(testsUsers);
             setSelectedMembersIds(response.data);
@@ -145,6 +152,7 @@ const Tests = () => {
     const getTestQuestions = (testId) => {
         setLoading(true);
         axios.get(`/tests_questions/${testId}`).then((response) => {
+            setSelectedTestQuestionsIds(response.data);
             const testsQuestions = questions.filter(question => response.data.includes(question.id));
             setModalQuestions(testsQuestions);
             setSelectedQuestionsIds(response.data);
@@ -207,15 +215,32 @@ const Tests = () => {
         setNextMemberId(prev => prev - 1);
     };
 
-    const handleMemberChange = (selected, id) => {
+    const handleMemberChange = (selected, currentMember) => {
+        const memberParam = currentMember.id > 0 ? 'id' : 'user_id';
+        if (!selected[0]) {
+            setMembers(
+                members.map((member) =>
+                    member.id === currentMember.id
+                        ? {
+                            id: nextMemberId,
+                            user_id: null
+                        }
+                        : member
+                )
+            );
+            setNextMemberId(prev => prev - 1);
+            setSelectedMembersIds(selectedMembersIds.filter((memberId) => memberId !== currentMember[memberParam]));
+            return;
+        }
         const selectedUser = selected[0];
         if (selectedMembersIds.includes(selectedUser.id)) {
             return;
         }
+        setMembersToDelete(membersToDelete.filter((member) => member[memberParam] !== currentMember[memberParam]));
         setSelectedMembersIds([...selectedMembersIds, selectedUser.id]);
         setMembers(
             members.map((member) =>
-                member.id === id
+                member.id === currentMember.id
                     ? { ...member, user_id: selectedUser.id }
                     : member
             )
@@ -223,38 +248,63 @@ const Tests = () => {
     };
 
     const handleDeleteMember = (selectedMember) => {
-        setMembers(members.filter((member) => member.id !== selectedMember.id));
-        setSelectedMembersIds(selectedMembersIds.filter((member) => member !== selectedMember.user_id));
-        setMembersToDelete([...membersToDelete, members.filter((member) => member.id === selectedMember.id)]);
+        const memberParam = selectedMember.id > 0 ? 'id' : 'user_id';
+        setMembers(members.filter((member) => member[memberParam] !== selectedMember[memberParam]));
+        setSelectedMembersIds(selectedMembersIds.filter((memberId) => memberId !== selectedMember[memberParam]));
+        setMembersToDelete([...membersToDelete, members.filter((member) => member[memberParam] === selectedMember[memberParam])]);
     };
 
-    const addQuestion = (question_body = '') => {
+    const addQuestion = (question_body = null, question_id = null) => {
         const newQuestion = {
             id: nextQuestionId,
-            question_body
+            question_body,
+            question_id
         };
         setModalQuestions([...modalQuestions, newQuestion]);
         setNextQuestionId(prev => prev - 1);
     };
 
-    const handleQuestionChange = (selected, id) => {
+    const handleQuestionChange = (selected, currentQuestion) => {
+        const questionParam = currentQuestion.id > 0 ? 'id' : 'question_id';
+        if (!selected[0]) {
+            setModalQuestions(
+                modalQuestions.map((question) =>
+                    question.id === currentQuestion.id
+                        ? {
+                            id: nextQuestionId,
+                            question_body: null,
+                            question_id: null
+                        }
+                        : question
+                )
+            );
+            setNextQuestionId(prev => prev - 1);
+            setSelectedQuestionsIds(selectedQuestionsIds.filter((question) => question !== currentQuestion[questionParam]));
+            return;
+        }
         const selectedQuestion = selected[0];
         if (selectedQuestionsIds.includes(selectedQuestion.id)) {
             return;
         }
+        setModalQuestionsToDelete(modalQuestionsToDelete.filter(question => question.id !== currentQuestion[questionParam]));
         setSelectedQuestionsIds([...selectedQuestionsIds, selectedQuestion.id]);
         setModalQuestions(
             modalQuestions.map((question) =>
-                question.id === id
-                    ? { ...question, question_body: selectedQuestion.question_body }
+                question.id === currentQuestion.id
+                    ? {
+                        ...question,
+                        question_body: selectedQuestion.question_body,
+                        question_id: selectedQuestion.id
+                    }
                     : question
             )
         );
     };
 
     const handleDeleteQuestion = (selectedQuestion) => {
+        const questionParam = selectedQuestion.id > 0 ? 'id' : 'question_id';
         setModalQuestions(modalQuestions.filter((question) => question.id !== selectedQuestion.id));
-        setSelectedQuestionsIds(selectedQuestionsIds.filter((question) => question !== selectedQuestion.id));
+        setSelectedQuestionsIds(selectedQuestionsIds.filter((question) => question !== selectedQuestion[questionParam]));
         setModalQuestionsToDelete([...modalQuestionsToDelete, modalQuestions.filter((question) => question.id === selectedQuestion.id)]);
     };
 
@@ -277,19 +327,41 @@ const Tests = () => {
         setShowAddModal(false);
         setShowEditModal(false);
         setShowMembersModal(false);
+        setEditConfirmed(false);
     };
 
-    const handleShowAddModal = () => {
+    const handleShowAddModal = (test = null) => {
+        if (test != null) {
+            setNewTest(true);
+            const currentTest = tests.find(t => t.id == test.id);
+            setSelectedTest(currentTest);
+            setSelectedTeacher(users.find(user => user.id === currentTest.teacher_id));
+            getTestUsersIds(currentTest.id);
+            getTestQuestions(currentTest.id);
+        }
         setShowAddModal(true);
     };
 
+    const handleConfirmationConfirm = () => {
+        setEditConfirmed(true);
+        setShowConfirmation(false);
+    }
+
+    const handleConfirmationCancel = () => {
+        setShowConfirmation(false);
+        setShowEditModal(false);
+    }
+
     const handleShowEditModal = (test) => {
-        setSelectedTest(test);
+        setShowConfirmation(true);
+        const currentTest = tests.find(t => t.id === test.id);
+        setSelectedTest(currentTest);
         setSelectedStudentChooseOption('Отдельно');
         setSelectedCourse({});
         setSelectedGroup({});
-        getTestUsersIds(test.id);
-        getTestQuestions(test.id);
+        setSelectedTeacher(users.find(user => user.id === currentTest.teacher_id));
+        getTestUsersIds(currentTest.id);
+        getTestQuestions(currentTest.id);
         setShowEditModal(true);
     };
 
@@ -301,7 +373,6 @@ const Tests = () => {
 
     const handleAddSubmit = (event) => {
         event.preventDefault();
-        setLoading(true);
 
         if (selectedTeacher === undefined) {
             alert('Выберите преподавателя');
@@ -311,7 +382,17 @@ const Tests = () => {
             alert('Выберите вопросы')
             setLoading(false);
             return;
+        } else if (members.some(member => member.user_id === null)) {
+            alert('Заполните или удалите пустые поля участников')
+            setLoading(false);
+            return;
+        } else if (modalQuestions.some(question => question.question_body === null)) {
+            alert('Заполните или удалите пустые поля вопросов')
+            setLoading(false);
+            return;
         }
+
+        setLoading(true);
 
         const form = event.target;
         const startTime = moment.utc(form.start_time.value).format('YYYY-MM-DD HH:mm:ss');
@@ -331,17 +412,19 @@ const Tests = () => {
         };
 
         let membersIds = selectedMembersIds;
-        if (JSON.stringify(selectedCourse) !== '{}') {
-            membersIds = users.filter(user =>
-                user.role_id == roles['student']
-                && user.course_id == selectedCourse.id)
-                .map(user => user.id);
-        } else if (JSON.stringify(selectedGroup) !== '{}') {
+
+        if (JSON.stringify(selectedGroup) !== '{}') {
             membersIds = users.filter(user =>
                 user.role_id == roles['student']
                 && user.group_id == selectedGroup.id)
                 .map(user => user.id);
+        } else if (JSON.stringify(selectedCourse) !== '{}') {
+            membersIds = users.filter(user =>
+                user.role_id == roles['student']
+                && user.course_id == selectedCourse.id)
+                .map(user => user.id);
         }
+
         if (membersIds.length === 0) {
             alert('По указанным параметрам студентов не найдено');
             setLoading(false);
@@ -375,6 +458,7 @@ const Tests = () => {
             });
             getTestsTable();
             setLoading(false);
+            setNewTest(false);
         }).catch((error) => {
             console.error(error);
         });
@@ -382,17 +466,39 @@ const Tests = () => {
 
     const handleEditSubmit = (event) => {
         event.preventDefault();
-        setLoading(true);
 
+        if (!editConfirmed) {
+            return;
+        } else {
+            const testUserRefreshData = {
+                grade: 0,
+                time_spent: moment.utc(
+                    moment.duration(0, 'minutes').asMilliseconds()
+                ).format('HH:mm:ss'),
+                status_id: statuses.find(status => status.status_name === 'Не начал').id
+            };
+            selectedTestUsersIds.forEach(async userId => {
+                axios.put(`/tests_users/${selectedTest.id}/${userId}`, testUserRefreshData);
+            });
+        }
         if (selectedTeacher === undefined) {
             alert('Выберите преподавателя');
-            setLoading(false);
             return;
         } else if (selectedQuestionsIds.length === 0) {
             alert('Выберите вопросы')
-            setLoading(false);
+            return;
+        } else if (members.some(member => member.user_id === null)) {
+            alert('Заполните или удалите пустые поля участников')
+            return;
+        } else if (modalQuestions.some(question => question.question_body === null)) {
+            alert('Заполните или удалите пустые поля вопросов')
             return;
         }
+
+        setLoading(true);
+
+        const controller = new AbortController();
+        const signal = controller.signal;
 
         const form = event.target;
         const startTime = moment.utc(form.start_time.value).format('YYYY-MM-DD HH:mm:ss');
@@ -412,22 +518,17 @@ const Tests = () => {
         };
 
         let membersIds = selectedMembersIds;
-        console.log(selectedCourse)
-        console.log(membersIds)
-        if (JSON.stringify(selectedCourse) !== '{}') {
-            membersIds = users.filter(user =>
-                user.role_id == roles['student']
-                && user.course_id == selectedCourse.id)
-                .map(user => user.id);
-            console.log('course / ', membersIds)
-        } else if (JSON.stringify(selectedGroup) !== '{}') {
+        if (JSON.stringify(selectedGroup) !== '{}') {
             membersIds = users.filter(user =>
                 user.role_id == roles['student']
                 && user.group_id == selectedGroup.id)
                 .map(user => user.id);
-            console.log('group / ', membersIds)
+        } else if (JSON.stringify(selectedCourse) !== '{}') {
+            membersIds = users.filter(user =>
+                user.role_id == roles['student']
+                && user.course_id == selectedCourse.id)
+                .map(user => user.id);
         }
-        console.log(membersIds)
 
         if (membersIds.length === 0) {
             alert('По указанным параметрам студентов не найдено');
@@ -449,36 +550,36 @@ const Tests = () => {
             questions_ids: []
         };
 
-        axios.put(`/tests/${selectedTest.id}`, testBody).then(() => {
-            const membersPromises = members.map(member => {
-                if (member.id < 0) {
+        console.log("MEMBERS\n", membersIds)
+        console.log("QUESTIONS\n", selectedQuestionsIds)
+        console.log("MEMBERS TO DELETE\n", membersToDelete);
+        console.log("QUESTIONS TO DELETE\n", modalQuestionsToDelete);
+
+        axios.put(`/tests/${selectedTest.id}`, testBody, { signal }).then(() => {
+            const membersPromises = membersIds.map(memberId => {
+                console.log("MEMBER ID\n", memberId)
+                if (!selectedTestUsersIds.some(id => id === memberId)) {
                     return axios.post(`/tests_users`, {
                         ...testUsers,
-                        users: [member.id],
+                        users: [memberId],
                         test_id: selectedTest.id
-                    });
-                } else if (member.id >= 0) {
-                    return axios.put(`/tests_users/${member.id}`, member);
+                    }, { signal });
                 }
-                return Promise.resolve();
             });
-            const questionsPromises = modalQuestions.map(question => {
-                if (question.id < 0) {
+            const questionsPromises = selectedQuestionsIds.map(questionId => {
+                if (!selectedTestQuestionsIds.some(id => id === questionId)) {
                     return axios.post(`/tests_questions`, {
                         ...testQuestions,
-                        questions_ids: [question.id],
+                        questions_ids: [questionId],
                         test_id: selectedTest.id
-                    });
-                } else if (question.id >= 0) {
-                    return axios.put(`/tests_questions/${question.id}`, question);
+                    }, { signal });
                 }
-                return Promise.resolve();
             });
             const membersDeletePromises = membersToDelete.map(member => {
-                return axios.delete(`/tests_users/${selectedTest.id}/${member.id}`);
+                return axios.delete(`/tests_users/${selectedTest.id}/${member[0].id}`, { signal });
             });
             const questionsDeletePromises = modalQuestionsToDelete.map(question => {
-                return axios.delete(`/tests_questions/${selectedTest.id}/${question.id}`);
+                return axios.delete(`/tests_questions/${selectedTest.id}/${question[0].id}`, { signal });
             });
             Promise.all([
                 ...membersPromises,
@@ -491,20 +592,32 @@ const Tests = () => {
                 setMembersToDelete([]);
                 setModalQuestionsToDelete([]);
                 setLoading(false);
+                setShowEditModal(false);
+                setEditConfirmed(false);
             }).catch((error) => {
-                console.log("Error updating questions and users: ", error);
+                console.log("Error updating questions or users: ", error);
+                setLoading(false);
+                setShowEditModal(false);
+                setEditConfirmed(false);
             });
         }).catch((error) => {
-            console.log("Error updating test: ", error);
+            if (error.name === "AbortError") {
+                console.log("Request has cancelled: ", error.message);
+            } else {
+                console.log("Test updating error: ", error);
+            }
+            setLoading(false);
+            controller.abort();
+            setShowEditModal(false);
+            setEditConfirmed(false);
         });
-        setShowEditModal(false);
     };
 
     const handleDelete = (id) => {
         setLoading(true);
         axios.delete(`/tests/${id}`).then(() => {
             setTests(tests.filter((test) => test.id !== id));
-            getTestsTable();
+            setTestsTable(testsTable.filter((test) => test.id !== id));
             setLoading(false);
         });
     };
@@ -527,7 +640,7 @@ const Tests = () => {
                         placeholder='Поиск по критерию'
                     />
                 </div>
-                <Button className='col-12 col-md-2' variant='primary' onClick={handleShowAddModal}>
+                <Button className='col-12 col-md-2' variant='primary' onClick={() => handleShowAddModal()}>
                     Добавить
                 </Button>
             </div>
@@ -564,15 +677,9 @@ const Tests = () => {
                                 <td className='d-flex flex-column justify-content-center gap-2'>
                                     <Button
                                         variant='success'
-                                        onClick={() => handleShowEditModal(test)}
+                                        onClick={() => handleShowAddModal(test)}
                                     >
                                         Новый
-                                    </Button>
-                                    <Button
-                                        variant='dark'
-                                        onClick={() => handleShowEditModal(test)}
-                                    >
-                                        Остановить
                                     </Button>
                                     <Button
                                         variant='warning'
@@ -598,7 +705,11 @@ const Tests = () => {
                     <Modal.Body>
                         <Form.Group className='mb-3' controlId='test_name'>
                             <Form.Label>Название теста</Form.Label>
-                            <Form.Control type='text' name='test_name' placeholder='Введите название' required />
+                            <Form.Control type='text' name='test_name'
+                                defaultValue={newTest ? selectedTest.test_name : undefined}
+                                placeholder='Введите название'
+                                required
+                            />
                         </Form.Group>
                         <div className='d-flex flex-wrap gap-3 mb-3'>
                             <Form.Group className='col-12 col-sm' controlId='start_time'>
@@ -612,7 +723,13 @@ const Tests = () => {
                         </div>
                         <Form.Group className='mb-3' controlId='time_to_pass'>
                             <Form.Label>Время на прохождение (в минутах)</Form.Label>
-                            <Form.Control type='number' name='time_to_pass' placeholder='Введите время' required />
+                            <Form.Control type='number' name='time_to_pass'
+                                defaultValue={newTest ?
+                                    moment.duration(selectedTest.time_to_pass).asMinutes()
+                                    : undefined}
+                                placeholder='Введите время'
+                                required
+                            />
                         </Form.Group>
                         <Form.Group className='mb-3' controlId='count_in_stats'>
                             <Form.Check type='checkbox' name='count_in_stats' label='Учитывать результаты теста в статистике' />
@@ -625,6 +742,7 @@ const Tests = () => {
                                 onChange={handleTeacherChange}
                                 labelKey={option => `${option.surname} ${option.name} ${option.patronymic}`}
                                 placeholder='Выберите преподавателя'
+                                selected={newTest ? [selectedTeacher] : undefined}
                                 allowNew={false}
                                 required
                             />
@@ -699,8 +817,8 @@ const Tests = () => {
                                                     <Form.Group controlId={`member${member.id}`} className=''>
                                                         <Typeahead
                                                             id='typeahead-members'
-                                                            options={users.filter(user => user.role_id === roles.student && !selectedMembersIds.some(member => member === user.id))}
-                                                            onChange={(selected) => handleMemberChange(selected, member.id)}
+                                                            options={users.filter(user => user.role_id === roles.student && !selectedMembersIds.some(memberId => memberId === user.id))}
+                                                            onChange={(selected) => handleMemberChange(selected, member)}
                                                             labelKey={option => `${option.surname} ${option.name} ${option.patronymic}`}
                                                             placeholder='Выберите студента'
                                                             allowNew={false}
@@ -741,9 +859,10 @@ const Tests = () => {
                                                     <Typeahead
                                                         id='typeahead-question'
                                                         options={questions.filter(question => !selectedQuestionsIds.some(q => q === question.id))}
-                                                        onChange={(selected) => handleQuestionChange(selected, question.id)}
+                                                        onChange={(selected) => handleQuestionChange(selected, question)}
                                                         labelKey={"question_body"}
                                                         placeholder='Выберите вопрос'
+                                                        defaultSelected={newTest ? (question.id > 0 ? [question] : []) : undefined}
                                                         allowNew={false}
                                                         required
                                                     />
@@ -780,7 +899,8 @@ const Tests = () => {
                         <Form.Group className='mb-3' controlId='test_name'>
                             <Form.Label>Название теста</Form.Label>
                             <Form.Control type='text' name='test_name'
-                                defaultValue={selectedTest.test_name} placeholder='Введите название'
+                                defaultValue={selectedTest.test_name}
+                                placeholder='Введите название'
                                 required
                             />
                         </Form.Group>
@@ -898,11 +1018,11 @@ const Tests = () => {
                                                     <Form.Group controlId={`member${member.id}`} className=''>
                                                         <Typeahead
                                                             id='typeahead-members'
-                                                            options={users.filter(user => user.role_id === roles.student && !selectedMembersIds.some(member => member === user.id))}
-                                                            onChange={(selected) => handleMemberChange(selected, member.id)}
+                                                            options={users.filter(user => user.role_id === roles.student && !selectedMembersIds.some(memberId => memberId === user.id))}
+                                                            onChange={(selected) => handleMemberChange(selected, member)}
                                                             labelKey={option => `${option.surname} ${option.name} ${option.patronymic}`}
                                                             placeholder='Выберите студента'
-                                                            selected={member.id > 0 ? [member] : []}
+                                                            defaultSelected={member.id > 0 ? [member] : []}
                                                             allowNew={false}
                                                             required
                                                         />
@@ -941,10 +1061,10 @@ const Tests = () => {
                                                     <Typeahead
                                                         id='typeahead-question'
                                                         options={questions.filter(question => !selectedQuestionsIds.some(q => q === question.id))}
-                                                        onChange={(selected) => handleQuestionChange(selected, question.id)}
+                                                        onChange={(selected) => handleQuestionChange(selected, question)}
                                                         labelKey={"question_body"}
                                                         placeholder='Выберите вопрос'
-                                                        selected={question.id > 0 ? [question] : []}
+                                                        defaultSelected={question.id > 0 ? [question] : []}
                                                         allowNew={false}
                                                         required
                                                     />
@@ -1006,6 +1126,14 @@ const Tests = () => {
                     </Modal.Body>
                 </Form>
             </Modal>
+
+            <ConfirmationModal
+                show={showConfirmation}
+                title="Подтверждение действия"
+                message="Если вы сохраните изменения, все результаты прохождения данного теста обнулятся"
+                onConfirm={handleConfirmationConfirm}
+                onCancel={handleConfirmationCancel}
+            />
         </div >
     );
 };

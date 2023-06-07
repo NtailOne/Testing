@@ -401,18 +401,16 @@ async function executeSelectSqlQuery(pool, sql, res) {
             }
         });
 
-        app.put('/tests_questions/:id', async (req, res) => {
-            const id = req.params.id;
-            const { test_id, question_id } = req.body;
-            const sql = 'UPDATE tests_questions SET test_id = ?, question_id = ? WHERE id = ?';
+        app.put('/tests_questions/:testId/:questionId', async (req, res) => {
+            const { testId, questionId } = req.params;
+            const sql = 'UPDATE tests_questions SET test_id = ?, question_id = ? WHERE test_id = ? && question_id = ?';
             try {
-                const [result] = await pool.execute(sql, [test_id, question_id, id]);
+                const [result] = await pool.execute(sql, [testId, questionId, testId, questionId]);
                 if (result.affectedRows > 0) {
-                    console.log(`Updated tests_questions with id ${id}`);
-                    const testsQuestions = { id: Number(id), test_id, question_id };
-                    res.status(200).json(testsQuestions);
+                    console.log(`Updated tests_questions with test id ${testId} and question id ${questionId}`);
+                    res.sendStatus(200);
                 } else {
-                    res.status(404).send('Tests-Questions not found');
+                    res.status(404).send('Tests-questions not found');
                 }
             } catch (err) {
                 console.error(err);
@@ -420,18 +418,17 @@ async function executeSelectSqlQuery(pool, sql, res) {
             }
         });
 
-        app.put('/tests_users/:id', async (req, res) => {
-            const id = req.params.id;
-            const { test_id, user_id, grade, time_spent, status_id } = req.body;
-            constsql = 'UPDATE tests_users SET test_id = ?, user_id = ?, grade = ?, time_spent = ?, status_id = ? WHERE id = ?';
+        app.put('/tests_users/:testId/:userId', async (req, res) => {
+            const { testId, userId } = req.params;
+            const { grade, time_spent, status_id } = req.body;
+            const sql = 'UPDATE tests_users SET grade = ?, time_spent = ?, status_id = ? WHERE test_id = ? && user_id = ?';
             try {
-                const [result] = await pool.execute(sql, [test_id, user_id, grade, time_spent, status_id, id]);
+                const [result] = await pool.execute(sql, [grade, time_spent, status_id, testId, userId]);
                 if (result.affectedRows > 0) {
-                    console.log(`Updated tests_users with id ${id}`);
-                    const testsUsers = { id: Number(id), test_id, user_id, grade, time_spent, status_id };
-                    res.status(200).json(testsUsers);
+                    console.log(`Updated tests_users with test id ${testId} and user id ${userId}`);
+                    res.sendStatus(200);
                 } else {
-                    res.status(404).send('Tests-Users not found');
+                    res.status(404).send('Tests-users not found');
                 }
             } catch (err) {
                 console.error(err);

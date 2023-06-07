@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
+const packageJson = require('../../package.json');
 
 const initialState = {
     adminLogged: false,
     setAdminLogged: () => {},
     userLogged: false,
     setUserLogged: () => {},
-    serverURL: 'http://localhost:8080/'
+    serverURL: packageJson.proxy
 };
 export const Context = React.createContext(initialState);
 
