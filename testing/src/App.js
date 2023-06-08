@@ -6,7 +6,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ContextProvider } from './components/Context';
 
 import Login from './pages/login';
-import UserPage from './pages/userPage';
+import TeacherPage from './pages/teacherPage';
+import StudentPage from './pages/studentPage';
 import Admin from './pages/admin/admin'
 
 const App = () => {
@@ -16,7 +17,8 @@ const App = () => {
         <Routes>
           <Route exact path='/' element={<Navigate to='/login' />} />
           <Route path='/login' element={<Login />} />
-          <Route path='/userPage' element={<UserPage />} />
+          <Route path='/teacherPage' element={<TeacherPage />} />
+          <Route path='/studentPage' element={<StudentPage />} />
           <Route path='/admin' element={<Admin />} />
         </Routes>
       </Router>

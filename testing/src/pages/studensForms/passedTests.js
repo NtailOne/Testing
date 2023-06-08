@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Form, Button, Table } from 'react-bootstrap';
 import axios from 'axios';
 import moment from 'moment';
-import LoadingIndicator from '../../../components/LoadingIndicator';
-import StatisticsChart from '../../../components/StatisticsChart';
+import LoadingIndicator from '../../components/LoadingIndicator';
+import StatisticsChart from '../../components/StatisticsChart';
 
 const XLSX = require('xlsx');
-const Statistics = () => {
+const PassedTests = () => {
     const [loading, setLoading] = useState(false);
-    const [searchCategory, setSearchCategory] = useState('course');
+    const [searchCategory, setSearchCategory] = useState('student');
     const [timeFrom, setTimeFrom] = useState(null);
     const [timeTo, setTimeTo] = useState(null);
     const [bestAverageGrade, setBestAverageGrade] = useState(null);
@@ -29,13 +29,13 @@ const Statistics = () => {
 
     const [filteredTable, setFilteredTable] = useState([]);
 
-    const tableName = 'Статистика';
+    const tableName = 'Пройденные тесты';
 
     const xAxisKey = 'Студент';
     const barKey = 'Балл';
     const chartData = filteredTable.map(row => (
         {
-            [xAxisKey]: row.name,
+            [xAxisKey]: row.test_name,
             [barKey]: row.grade,
         }
     ));
@@ -203,7 +203,7 @@ const Statistics = () => {
         const ws = XLSX.utils.json_to_sheet(jsonData);
         ws['!cols'] = wscols;
         XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
-        const fileName = 'export.xlsx';
+        const fileName = `${jsonData['ФИО студента']}.xlsx`;
         XLSX.writeFile(wb, fileName);
     };
 
@@ -217,7 +217,7 @@ const Statistics = () => {
                     </Button>
                 </div>
                 <div className='d-flex flex-wrap align-items-center col-12'>
-                    <div className='d-flex flex-wrap gap-4 col-12 mb-4'>
+                    <div className='d-none flex-wrap gap-4 col-12 mb-4'>
                         <Form.Select className='search-bar col-auto'
                             value={searchCategory || 'course'}
                             onChange={handleCategoryChange}
@@ -298,9 +298,6 @@ const Statistics = () => {
                     <thead>
                         <tr>
                             <th>Название теста</th>
-                            <th>ФИО студента</th>
-                            <th>Курс</th>
-                            <th>Группа</th>
                             <th>Оценка</th>
                             <th>Дата прохождения</th>
                             <th>Время на прохождение, мин</th>
@@ -310,9 +307,6 @@ const Statistics = () => {
                         {filteredTable.map((row) => (
                             <tr key={row.id}>
                                 <td>{row.test_name}</td>
-                                <td>{row.name}</td>
-                                <td>{row.course_num}</td>
-                                <td>{row.group_name}</td>
                                 <td>{row.grade}</td>
                                 <td>{row.start_time}</td>
                                 <td>{row.time_spent}</td>
@@ -323,8 +317,8 @@ const Statistics = () => {
             </div>}
 
             <div className='d-flex flex-wrap gap-5 text-white mb-4'>
-                <p>Лучший средний балл: {bestAverageGrade}</p>
-                <p>Лучшее среднее время прохождения: {bestAverageTime}</p>
+                <h3>Средний балл: 4.44{bestAverageGrade}</h3>
+                <h3>Среднее время прохождения: 00:02:10{bestAverageGrade}</h3>
             </div>
 
             <div className='mb-4 table-responsive'>
@@ -334,4 +328,4 @@ const Statistics = () => {
     );
 }
 
-export default Statistics;
+export default PassedTests;

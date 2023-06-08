@@ -35,10 +35,6 @@ async function executeSelectSqlQuery(pool, sql, res) {
         });
 
         // Запросы от пользователей
-        app.get('/home', (req, res) => {
-            res.send({ express: 'Server has received the home get request' });
-        });
-
         app.post('/login', async (req, res) => {
             const sql = 'SELECT * FROM users WHERE `email` = ? AND `password` = ?;';
             const values = [
@@ -48,7 +44,7 @@ async function executeSelectSqlQuery(pool, sql, res) {
             try {
                 const [rows] = await pool.execute(sql, values);
                 if (rows.length > 0) {
-                    res.status(200).send('Success');
+                    res.status(200).json(rows[0]);
                 } else {
                     res.status(401).send('Failed');
                 }
@@ -111,6 +107,16 @@ async function executeSelectSqlQuery(pool, sql, res) {
 
         app.get('/statuses', async (req, res) => {
             const sql = 'SELECT * FROM statuses';
+            await executeSelectSqlQuery(pool, sql, res);
+        });
+
+        app.get('/tests_users', async (req, res) => {
+            const sql = 'SELECT * FROM tests_users';
+            await executeSelectSqlQuery(pool, sql, res);
+        });
+
+        app.get('/tests_questions', async (req, res) => {
+            const sql = 'SELECT * FROM tests_users';
             await executeSelectSqlQuery(pool, sql, res);
         });
 
@@ -610,18 +616,6 @@ async function executeSelectSqlQuery(pool, sql, res) {
                 const [rows] = await pool.execute(sql, [testId]);
                 const userIds = rows.map(row => row.user_id);
                 res.status(200).json(userIds);
-            } catch (err) {
-                console.error(err);
-                res.status(500).send('Error retrieving test users');
-            }
-        });
-
-        app.get('/test_users/full/:testId', async (req, res) => {
-            const testId = req.params.testId;
-            const sql = 'SELECT * FROM tests_users WHERE test_id = ?';
-            try {
-                const [rows] = await pool.execute(sql, [testId]);
-                res.status(200).json(rows);
             } catch (err) {
                 console.error(err);
                 res.status(500).send('Error retrieving test users');

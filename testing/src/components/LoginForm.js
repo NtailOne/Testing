@@ -51,7 +51,7 @@ const LoginForm = () => {
         if (errors.email === "" && errors.password === "") {
             axios.post(serverURL + 'login', values)
                 .then(res => {
-                    if (res.data === "Success") navigate('/home');
+                    if (res.data === "Success") navigate('/userPage');
                     else alert('Аккаунт не найден');
                 })
                 .catch(err => console.log(err));
