@@ -1,7 +1,7 @@
 import React from 'react';
 import Navbar from '../components/Navbar';
 
-const Contact = () => {
+const UserPage = () => {
   return (
     <>
       <Navbar />
@@ -12,4 +12,4 @@ const Contact = () => {
   );
 };
 
-export default Contact;
+export default UserPage;

@@ -13,8 +13,6 @@ const Statistics = () => {
     const [bestAverageGrade, setBestAverageGrade] = useState(null);
     const [bestAverageTime, setBestAverageTime] = useState(null);
 
-    const [filteredStudents, setFilteredStudents] = useState([]);
-
     const [roles, setRoles] = useState([]);
     const [statuses, setStatuses] = useState([]);
     const [students, setStudents] = useState([]);
@@ -22,17 +20,22 @@ const Statistics = () => {
     const [groups, setGroups] = useState([]);
     const [tests, setTests] = useState([]);
     const [testUsers, setTestUsers] = useState([]);
-
+    
     const [selectedStudent, setSelectedStudent] = useState({});
     const [selectedCourse, setSelectedCourse] = useState({});
     const [selectedGroup, setSelectedGroup] = useState({});
     const [selectedTest, setSelectedTest] = useState({});
+    
+    const [filteredStudents, setFilteredStudents] = useState([]);
+    const [filteredTestUsers, setFilteredTestUsers] = useState([]);
+    const [filteredTable, setFilteredTable] = useState([]);
 
     const tableName = 'Статистика';
 
-    const chartData = tests.map(test => ({ name: test.test_name, value: test.max_grade }));
     const xAxisKey = 'Название';
-    const barKey = 'Макс. балл';
+    const barKey = 'Макс.балл';
+    const chartData = tests.map(test => ({ [xAxisKey]: test.test_name, [barKey]: test.max_score }));
+    // const chartsData = filteredStudents.map(student => ({ [xAxisKey]: test.test_name, [barKey]: test.max_score }));
 
     useEffect(() => {
         getStudents();
@@ -59,16 +62,17 @@ const Statistics = () => {
     const getTests = () => {
         setLoading(true);
         axios.get(`/tests`).then((response) => {
-            setTests(response.data.map(test => ({
+            const currentTests = response.data.map(test => ({
                 ...test,
                 start_time: moment.utc(test.start_time).format('DD.MM.YYYY HH:mm:ss'),
                 end_time: moment.utc(test.end_time).format('DD.MM.YYYY HH:mm:ss')
-            })));
+            }));
+            setTests(currentTests.filter(test => test.count_in_stats == 1));
             setLoading(false);
         }).catch('Getting tests error');
     };
 
-    const getTestUsersIds = (testId) => {
+    const getTestUsers = (testId) => {
         setLoading(true);
         axios.get(`/test_users/full/${testId}`).then((response) => {
             setTestUsers(response.data);
@@ -107,22 +111,60 @@ const Statistics = () => {
 
     const handleCourseChange = (event) => {
         const value = event.target.value;
-        setSelectedCourse(courses.find(course => course.id === value));
+        setSelectedCourse(courses.find(course => course.id == value));
+        const currentStudents = students.filter(student => student.course_id == value);
+        setFilteredStudents(currentStudents);
+        setFilteredTestUsers(testUsers.filter(testUser =>
+            currentStudents.some(currentStudent => currentStudent.id == testUser.user_id)
+        ));
+        const currentTable = currentStudents.map(student => ({
+            id: student.id,
+            name: student.surname + ' ' + student.name + ' ' + student.patronymic,
+            course_num: courses.find(course => course.id == student.course_id).course_num,
+            group_name: groups.find(group => group.id == student.group_id).group_name,
+            test_name: 'ffffffffffff ffffff fffffffffffffffff fffff  faasfffffffffffffffffff asd',
+            grade: 5,
+            start_time: '24.06.2023',
+            time_spent: '00:01:00'
+        }));
+        console.log(currentTable)
+        setFilteredTable(currentTable);
     };
 
     const handleGroupChange = (event) => {
         const value = event.target.value;
-        setSelectedGroup(groups.find(group => group.id === value));
+        setSelectedGroup(groups.find(group => group.id == value));
+        const currentStudents = students.filter(student => student.group_id == value);
+        setFilteredStudents(currentStudents);
+        setFilteredTestUsers(testUsers.filter(testUser =>
+            currentStudents.some(currentStudent => currentStudent.id == testUser.user_id)
+        ));
+        const currentTable = '';
+        setFilteredTable(currentTable);
     };
 
     const handleStudentChange = (event) => {
         const value = event.target.value;
-        setSelectedStudent(students.find(student => student.id === value));
+        setSelectedStudent(students.find(student => student.id == value));
+        const currentStudents = students.filter(student => student.id == value);
+        setFilteredStudents(currentStudents);
+        setFilteredTestUsers(testUsers.filter(testUser =>
+            currentStudents.some(currentStudent => currentStudent.id == testUser.user_id)
+        ));
+        const currentTable = '';
+        setFilteredTable(currentTable);
     };
 
     const handleTestChange = (event) => {
         const value = event.target.value;
-        setSelectedTest(tests.find(test => test.id === value));
+        const currentTest = tests.find(test => test.id == value);
+        setSelectedTest(currentTest);
+        getTestUsers(currentTest.id);
+        const currentTestUsers = testUsers.filter(testUser => testUser.test_id == value);
+        setFilteredTestUsers(currentTestUsers);
+        setFilteredStudents(students.filter(student => currentTestUsers.some(testUser => testUser.user_id == student.id)));
+        const currentTable = '';
+        setFilteredTable(currentTable);
     };
 
     const handleExportToCsv = () => {
@@ -132,7 +174,12 @@ const Statistics = () => {
     return (
         <div className='mt-4 mx-0 mx-md-3'>
             <div className='d-flex flex-column flex-wrap justify-content-between mb-5 gap-4'>
-                <h1 className='text-white'>{tableName}</h1>
+                <div className='d-flex flex-wrap gap-5'>
+                    <h1 className='text-white'>{tableName}</h1>
+                    <Button variant='success' onClick={handleExportToCsv}>
+                        Скачать CSV
+                    </Button>
+                </div>
                 <div className='d-flex flex-wrap align-items-center col-12'>
                     <div className='d-flex flex-wrap gap-4 col-12 mb-4'>
                         <Form.Select className='search-bar col-auto'
@@ -146,7 +193,7 @@ const Statistics = () => {
                         </Form.Select>
                         {searchCategory === 'course' ? <Form.Select className='pointer col'
                             required
-                            value={selectedCourse.id || ''}
+                            value={selectedCourse ? selectedCourse.id : ''}
                             onChange={handleCourseChange}>
                             <option disabled value=''>
                                 Выберите курс
@@ -159,7 +206,7 @@ const Statistics = () => {
                         </Form.Select> : ''}
                         {searchCategory === 'group' ? <Form.Select className='pointer col'
                             required
-                            value={selectedGroup.id || ''}
+                            value={selectedGroup ? selectedGroup.id : ''}
                             onChange={handleGroupChange}>
                             <option disabled value=''>
                                 Выберите группу
@@ -172,7 +219,7 @@ const Statistics = () => {
                         </Form.Select> : ''}
                         {searchCategory === 'student' ? <Form.Select className='pointer col'
                             required
-                            value={selectedStudent.id || ''}
+                            value={selectedStudent ? selectedStudent.id : ''}
                             onChange={handleStudentChange}>
                             <option disabled value=''>
                                 Выберите студента
@@ -185,7 +232,7 @@ const Statistics = () => {
                         </Form.Select> : ''}
                         {searchCategory === 'test' ? <Form.Select className='pointer col'
                             required
-                            value={selectedTest.id || ''}
+                            value={selectedTest ? selectedTest.id : ''}
                             onChange={handleTestChange}>
                             <option disabled value=''>
                                 Выберите тест
@@ -214,26 +261,25 @@ const Statistics = () => {
                 <Table bordered hover className='bg-white text-black'>
                     <thead>
                         <tr>
-                            <th>ФИО студента</th>
-                            <th>Группа</th>
-                            <th>Курс</th>
                             <th>Название теста</th>
+                            <th>ФИО студента</th>
+                            <th>Курс</th>
+                            <th>Группа</th>
                             <th>Оценка</th>
                             <th>Дата прохождения</th>
                             <th>Время на прохождение, мин</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredStudents.map((student) => (
-                            <tr key={student.id}>
-                                <td>{student.id}</td>
-                                <td>{`${student.surname} ${student.name} ${student.patronymic}`}</td>
-                                <td>{student.group_name}</td>
-                                <td>{student.course_num}</td>
-                                <td>{student.test_name}</td>
-                                <td>{student.grade}</td>
-                                <td>{moment(student.date).format('YYYY-MM-DD')}</td>
-                                <td>{student.time_spent}</td>
+                        {filteredTable.map((row) => (
+                            <tr key={row.id}>
+                                <td>{row.test_name}</td>
+                                <td>{row.name}</td>
+                                <td>{row.course_num}</td>
+                                <td>{row.group_name}</td>
+                                <td>{row.grade}</td>
+                                <td>{moment(row.start_time).format('DD.MM.YYYY')}</td>
+                                <td>{row.time_spent}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -242,17 +288,11 @@ const Statistics = () => {
 
             <div className='text-white mb-4'>
                 <p>Лучший средний балл</p>
-                <p>Лучший балл</p>
+                <p>Лучшее среднее время прохождения</p>
             </div>
 
             <div className='mb-4 table-responsive'>
                 <StatisticsChart data={chartData} xAxisKey={xAxisKey} barKey={barKey} />
-            </div>
-
-            <div>
-                <Button variant='success' onClick={handleExportToCsv}>
-                    Скачать CSV
-                </Button>
             </div>
         </div>
     );
